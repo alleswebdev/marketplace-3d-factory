@@ -1,0 +1,16 @@
+### Send POST request with json body
+POST {{host}}/commands/list
+Content-Type: application/json
+
+{
+  "id": 999,
+  "value": "content"
+}
+
+### Send GET request
+GET {{host}}/commands/all
+Content-Type: application/json
+
+### exec
+GET {{host}}/commands/printor2/exec
+Content-Type: application/json

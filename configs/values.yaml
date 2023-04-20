@@ -1,0 +1,16 @@
+ Port: 8090
+ Name: "name"
+ WbToken: "eyJhbGciOiJFUzI1NiIsImtpZCI6IjIwMjMxMjI1djEiLCJ0eXAiOiJKV1QifQ.eyJlbnQiOjEsImV4cCI6MTcyMjY1OTU4MiwiaWQiOiJlYjVmNWYxMi01ZWU2LTQ3NTEtOTE2OC03NjkwM2VhNmUxNDciLCJpaWQiOjMxNDQ5MDg4LCJvaWQiOjI1NTgzMCwicyI6MTA3Mzc0MTg0Miwic2lkIjoiYmMzYTI5YTMtZTY0OC00ZjBhLWFiNTEtMDZmMDhiODIwZmZhIiwidCI6ZmFsc2UsInVpZCI6MzE0NDkwODh9.0efJfHUU-gcBd13IkJSn7GhbUtd4NHiQhAUEupbkCCSQ7Ash-ySmiVArQffsoWQH4DTdThWoJGf0LoyhGyX-cA"
+ DatabaseURL: "postgres://postgres:example@localhost:5432/test"
+
+ Commands:
+  kp1: 
+    name: "kp1"
+    command: "ls /dev"
+    start: "ls /dev"
+    stop: "ls /dev"
+    restart: "ls /dev"
+  group2: 
+    name: "printor2"
+    command: "docker -v"
+    start: "docker -v"
