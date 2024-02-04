@@ -99,6 +99,8 @@ func main() {
 
 	appApi := api.New(queueStore)
 	app.Get("/api/list-queue", appApi.ListQueue)
+	app.Post("/api/set-complete", appApi.SetComplete)
+	app.Post("/api/set-printing", appApi.SetPrinting)
 
 	err = app.Listen(":" + strconv.Itoa(cfg.Port))
 	if err != nil {

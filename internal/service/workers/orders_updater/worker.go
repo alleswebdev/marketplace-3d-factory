@@ -46,6 +46,10 @@ func (w Worker) update(ctx context.Context) {
 		log.Fatal(err)
 	}
 
+	if len(resp.Orders) <= 0 {
+		return
+	}
+
 	err = w.ordersStore.AddOrders(ctx, convertOrders(resp.Orders))
 	if err != nil {
 		log.Fatal(err)

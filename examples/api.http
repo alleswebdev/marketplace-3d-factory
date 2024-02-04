@@ -1,16 +1,21 @@
-### Send POST request with json body
-POST {{host}}/api/list
+### set-complete
+POST {{host}}/api/set-complete
 Content-Type: application/json
 
 {
-  "id": 999,
-  "value": "content"
+  "id": 1637,
+  "state": false
 }
 
-### Send GET request
-GET {{host}}/api/list
+### set-printing
+POST {{host}}/api/set-printing
 Content-Type: application/json
 
-### exec
-GET {{host}}/commands/printor2/exec
+{
+  "id": 1637,
+  "state": true
+}
+
+### list-queue
+GET {{host}}/api/list-queue?withParentComplete=true&withChildrenComplete=true
 Content-Type: application/json

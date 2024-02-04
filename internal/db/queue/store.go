@@ -101,3 +101,42 @@ func (s *Store) SetPrinting(ctx context.Context, id int64, isPrinting bool) erro
 
 	return errors.Wrap(err, "dbPool.Exec")
 }
+
+type ListFilter struct {
+	WithParentComplete   bool `json:"withParentComplete"`
+	WithChildrenComplete bool `json:"withChildrenComplete"`
+}
+
+func (s *Store) GetList(ctx context.Context, filter ListFilter) ([]Item, error) {
+	qb := sq.Select("*").
+		From(TableName).
+		PlaceholderFormat(sq.Dollar)
+
+	wheres := sq.And{}
+
+	if !filter.WithChildrenComplete {
+		wheres = append(wheres, sq.And{
+			sq.NotEq{ParentColumn: 0},
+			sq.Eq{IsCompleteColumn: false},
+		})
+	}
+
+	if !filter.WithParentComplete {
+		wheres = append(wheres, sq.And{
+			sq.Eq{ParentColumn: 0},
+			sq.Eq{IsCompleteColumn: false},
+		})
+	}
+
+	qb.Where(wheres)
+
+	query, args, err := qb.ToSql()
+	if err != nil {
+		return nil, errors.Wrap(err, "sq.ToSql")
+	}
+
+	var items []Item
+	err = pgxscan.Select(ctx, s.dbPool, &items, query, args...)
+
+	return items, errors.Wrap(err, "pgxscan.Select")
+}
