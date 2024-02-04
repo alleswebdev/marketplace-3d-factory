@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/alleswebdev/marketplace-3d-factory/internal/api"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/config"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/card"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/order"
@@ -28,8 +29,8 @@ func main() {
 		Prefork:       false,
 		CaseSensitive: false,
 		StrictRouting: false,
-		ServerHeader:  "Fiber",
-		AppName:       "Test App v1.0.1",
+		ServerHeader:  "go-app",
+		AppName:       "Marketplace 3d factory",
 	})
 
 	app.Static("/", "./web/commander-front/dist")
@@ -93,9 +94,11 @@ func main() {
 
 	ordersUpdater := orders_updater.NewWorker(wbClient, orderStore)
 	go ordersUpdater.Run(ctx)
-	fmt.Println("я какого то хуя тут")
 	queueUpdater := queuer.NewWorker(dbpool, orderStore, savepointsStore, queueStore, cardStore)
 	go queueUpdater.Run(ctx)
+
+	appApi := api.New(queueStore)
+	app.Get("/api/list-queue", appApi.ListQueue)
 
 	err = app.Listen(":" + strconv.Itoa(cfg.Port))
 	if err != nil {

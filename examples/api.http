@@ -1,5 +1,5 @@
 ### Send POST request with json body
-POST {{host}}/commands/list
+POST {{host}}/api/list
 Content-Type: application/json
 
 {
@@ -8,7 +8,7 @@ Content-Type: application/json
 }
 
 ### Send GET request
-GET {{host}}/commands/all
+GET {{host}}/api/list
 Content-Type: application/json
 
 ### exec

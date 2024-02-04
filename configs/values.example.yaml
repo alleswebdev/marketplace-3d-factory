@@ -1,0 +1,4 @@
+ Port: 8090
+ Name: "name"
+ WbToken: ""
+ DatabaseURL: "postgres://postgres:example@localhost:5432/test"
