@@ -35,7 +35,7 @@ func NewStoreWithTx(txConn db.Conn) *Store {
 	}
 }
 
-func (s *Store) AddQueueItems(ctx context.Context, items []QueueItem) error {
+func (s *Store) AddQueueItems(ctx context.Context, items []Item) error {
 	qb := sq.Insert(TableName).
 		Columns(OrderIDColumn, ArticleColumn, ParentColumn, CreatedAtColumn).
 		PlaceholderFormat(sq.Dollar)
@@ -54,7 +54,7 @@ func (s *Store) AddQueueItems(ctx context.Context, items []QueueItem) error {
 	return errors.Wrap(err, "dbPool.Exec")
 }
 
-func (s *Store) GetAllItems(ctx context.Context) ([]QueueItem, error) {
+func (s *Store) GetAllItems(ctx context.Context) ([]Item, error) {
 	qb := sq.Select("*").
 		From(TableName).
 		PlaceholderFormat(sq.Dollar)
@@ -64,7 +64,7 @@ func (s *Store) GetAllItems(ctx context.Context) ([]QueueItem, error) {
 		return nil, errors.Wrap(err, "sq.ToSql")
 	}
 
-	var items []QueueItem
+	var items []Item
 	err = pgxscan.Select(ctx, s.dbPool, &items, query, args...)
 
 	return items, errors.Wrap(err, "pgxscan.Select")

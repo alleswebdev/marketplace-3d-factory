@@ -7,18 +7,18 @@ import (
 type Order struct {
 	Address               interface{} `json:"address"`
 	DeliveryType          string      `json:"deliveryType"`
-	SupplyId              string      `json:"supplyId"`
+	SupplyID              string      `json:"supplyId"`
 	User                  interface{} `json:"user"`
-	OrderUid              string      `json:"orderUid"`
+	OrderUID              string      `json:"orderUid"`
 	Article               string      `json:"article"`
 	Rid                   string      `json:"rid"`
 	CreatedAt             time.Time   `json:"createdAt"`
 	Offices               []string    `json:"offices"`
 	Skus                  []string    `json:"skus"`
-	Id                    int64       `json:"id"`
-	WarehouseId           int64       `json:"warehouseId"`
-	NmId                  int64       `json:"nmId"`
-	ChrtId                int64       `json:"chrtId"`
+	ID                    int64       `json:"id"`
+	WarehouseID           int64       `json:"warehouseId"`
+	NmID                  int64       `json:"nmId"`
+	ChrtID                int64       `json:"chrtId"`
 	Price                 int64       `json:"price"`
 	ConvertedPrice        int64       `json:"convertedPrice"`
 	CurrencyCode          int64       `json:"currencyCode"`
@@ -52,7 +52,7 @@ type Card struct {
 		Height int `json:"height"`
 	} `json:"dimensions"`
 	Characteristics []struct {
-		Id    int         `json:"id"`
+		ID    int         `json:"id"`
 		Name  string      `json:"name"`
 		Value interface{} `json:"value"`
 	} `json:"characteristics"`

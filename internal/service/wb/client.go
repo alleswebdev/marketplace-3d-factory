@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	ApiURL = "https://suppliers-api.wildberries.ru"
+	APIURL = "https://suppliers-api.wildberries.ru"
 )
 
 type Client struct {
@@ -30,7 +30,7 @@ func NewClient(token string) Client {
 }
 
 func (c Client) GetNewOrders(ctx context.Context) (OrdersResponse, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", ApiURL+"/api/v3/orders/new", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", APIURL+"/api/v3/orders/new", nil)
 	if err != nil {
 		return OrdersResponse{}, errors.Wrap(err, "http.NewRequestWithContext")
 	}
@@ -76,7 +76,7 @@ func (c Client) GetCardsList(ctx context.Context) (CardsListResponse, error) {
 		return CardsListResponse{}, errors.Wrap(err, "json.Marshal")
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", ApiURL+"/content/v2/get/cards/list?locale=ru", bytes.NewReader(requestBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", APIURL+"/content/v2/get/cards/list?locale=ru", bytes.NewReader(requestBody))
 	if err != nil {
 		return CardsListResponse{}, errors.Wrap(err, "http.NewRequestWithContext")
 	}

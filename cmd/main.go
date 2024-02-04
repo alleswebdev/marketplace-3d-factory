@@ -10,9 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/pkg/errors"
 
-	"github.com/alleswebdev/marketplace-3d-factory/internal/command"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/config"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/card"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/order"
@@ -35,24 +33,24 @@ func main() {
 	})
 
 	app.Static("/", "./web/commander-front/dist")
-	app.Get("/api/list", func(c *fiber.Ctx) error {
-		return c.JSON(cfg.Commands)
-	})
+	//app.Get("/api/list", func(c *fiber.Ctx) error {
+	//	return c.JSON(cfg.Commands)
+	//})
 	app.Post("/api/exec/:name", func(c *fiber.Ctx) error {
 		name := c.Params("name")
 		if len(name) == 0 {
 			return c.SendStatus(500)
 		}
 
-		commandsMap := command.GetCommandsMapFromConfig(cfg)
-		if cmd, ok := commandsMap[name]; ok {
-			result, err := cmd.Start()
-			if err != nil {
-				return fiber.NewError(fiber.StatusInternalServerError, errors.Wrap(err, "cmd.Start").Error())
-			}
-
-			return c.JSON(result)
-		}
+		//commandsMap := command.GetCommandsMapFromConfig(cfg)
+		//if cmd, ok := commandsMap[name]; ok {
+		//	result, err := cmd.Start()
+		//	if err != nil {
+		//		return fiber.NewError(fiber.StatusInternalServerError, errors.Wrap(err, "cmd.Start").Error())
+		//	}
+		//
+		//	return c.JSON(result)
+		//}
 
 		return c.SendStatus(fiber.StatusNotFound)
 	})

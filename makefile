@@ -38,3 +38,10 @@ goose-create:
 	goose -dir migrations \
 	postgres $(PG_DSN) \
 	create $(name) sql
+
+.PHONY: lint
+lint:
+	golangci-lint run \
+		--new-from-rev=origin/master \
+		--config=.golangci.pipeline.yaml \
+		./...

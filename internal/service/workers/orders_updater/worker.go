@@ -58,7 +58,7 @@ func convertOrders(wbOrders []wb.Order) []order.Order {
 	result := make([]order.Order, 0, len(wbOrders))
 	for _, item := range wbOrders {
 		result = append(result, order.Order{
-			ID:      item.Id,
+			ID:      item.ID,
 			Article: item.Article,
 			OrderCreatedAt: sql.NullTime{
 				Time: item.CreatedAt,

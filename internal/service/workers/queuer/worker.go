@@ -76,7 +76,7 @@ func (w Worker) do(ctx context.Context) error {
 		return errors.Wrap(err, "cardsStore.GetByArticlesMap")
 	}
 
-	queueItems := make([]queue.QueueItem, 0, len(orders))
+	queueItems := make([]queue.Item, 0, len(orders))
 
 	for _, order := range orders {
 		card, ok := cards[order.Article]
@@ -84,7 +84,7 @@ func (w Worker) do(ctx context.Context) error {
 			continue
 		}
 
-		queueItems = append(queueItems, queue.QueueItem{
+		queueItems = append(queueItems, queue.Item{
 			OrderID:        order.ID,
 			Article:        order.Article,
 			OrderCreatedAt: order.OrderCreatedAt.Time,
@@ -93,7 +93,7 @@ func (w Worker) do(ctx context.Context) error {
 			continue
 		}
 		for _, art := range card.Articles {
-			queueItems = append(queueItems, queue.QueueItem{
+			queueItems = append(queueItems, queue.Item{
 				OrderID:        order.ID,
 				Article:        art,
 				OrderCreatedAt: order.OrderCreatedAt.Time,

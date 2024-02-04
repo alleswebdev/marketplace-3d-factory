@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type QueueItem struct {
+type Item struct {
 	ID             int64        `db:"id"`
 	OrderID        int64        `db:"order_id"`
 	Article        string       `db:"article"`
