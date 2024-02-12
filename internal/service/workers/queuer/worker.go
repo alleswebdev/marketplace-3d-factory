@@ -47,7 +47,7 @@ func (w Worker) Run(ctx context.Context) {
 		default:
 			err := w.do(ctx)
 			if err != nil {
-				log.Println(err)
+				log.Printf("queuer:%s\n", err)
 			}
 
 			time.Sleep(delayInterval)
