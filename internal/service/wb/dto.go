@@ -93,3 +93,37 @@ type CardListCursor struct {
 type Filter struct {
 	WithPhoto int `json:"withPhoto"`
 }
+
+type SuppliesResponse struct {
+	Supplies []struct {
+		ClosedAt  time.Time   `json:"closedAt"`
+		ScanDt    interface{} `json:"scanDt"`
+		ID        string      `json:"id"`
+		Name      string      `json:"name"`
+		CreatedAt time.Time   `json:"createdAt"`
+		CargoType int         `json:"cargoType"`
+		Done      bool        `json:"done"`
+	} `json:"supplies"`
+	Next int `json:"next"`
+}
+
+type SupplyOrdersResponse struct {
+	Orders []struct {
+		User                  interface{} `json:"user"`
+		OrderUID              string      `json:"orderUid"`
+		Article               string      `json:"article"`
+		Rid                   string      `json:"rid"`
+		CreatedAt             time.Time   `json:"createdAt"`
+		Offices               []string    `json:"offices"`
+		Skus                  []string    `json:"skus"`
+		ID                    int64       `json:"id"`
+		WarehouseID           int         `json:"warehouseId"`
+		NmID                  int         `json:"nmId"`
+		ChrtID                int         `json:"chrtId"`
+		Price                 int         `json:"price"`
+		ConvertedPrice        int         `json:"convertedPrice"`
+		CurrencyCode          int         `json:"currencyCode"`
+		ConvertedCurrencyCode int         `json:"convertedCurrencyCode"`
+		CargoType             int         `json:"cargoType"`
+	} `json:"orders"`
+}

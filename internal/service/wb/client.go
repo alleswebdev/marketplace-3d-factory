@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
@@ -102,6 +104,68 @@ func (c Client) GetCardsList(ctx context.Context) (CardsListResponse, error) {
 	err = json.Unmarshal(body, &response)
 	if err != nil {
 		return CardsListResponse{}, errors.Wrap(err, "json.Unmarshal")
+	}
+
+	return response, nil
+}
+
+func (c Client) GetSupplies(ctx context.Context, next int) (SuppliesResponse, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", APIURL+"/api/v3/supplies?limit=300&next="+strconv.Itoa(next), nil)
+	if err != nil {
+		return SuppliesResponse{}, errors.Wrap(err, "http.NewRequestWithContext")
+	}
+
+	req.Header.Set("Authorization", c.token)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return SuppliesResponse{}, errors.Wrap(err, "httpClient.Do")
+	}
+	if resp.StatusCode != http.StatusOK {
+		return SuppliesResponse{}, errors.Wrapf(err, "http status:%d", resp.StatusCode)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return SuppliesResponse{}, errors.Wrap(err, "io.ReadAll")
+	}
+
+	var response SuppliesResponse
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return SuppliesResponse{}, errors.Wrap(err, "json.Unmarshal")
+	}
+
+	return response, nil
+}
+
+func (c Client) GetSupplyOrders(ctx context.Context, supply string) (SupplyOrdersResponse, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/api/v3/supplies/%s/orders", APIURL, supply), nil)
+	if err != nil {
+		return SupplyOrdersResponse{}, errors.Wrap(err, "http.NewRequestWithContext")
+	}
+
+	req.Header.Set("Authorization", c.token)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return SupplyOrdersResponse{}, errors.Wrap(err, "httpClient.Do")
+	}
+	if resp.StatusCode != http.StatusOK {
+		return SupplyOrdersResponse{}, errors.Wrapf(err, "http status:%d", resp.StatusCode)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return SupplyOrdersResponse{}, errors.Wrap(err, "io.ReadAll")
+	}
+
+	var response SupplyOrdersResponse
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return SupplyOrdersResponse{}, errors.Wrap(err, "json.Unmarshal")
 	}
 
 	return response, nil

@@ -60,12 +60,9 @@ export default {
       items: [],
       headers: [
         { title: '', key: 'photo', sortable: false},
-        { title: 'Название', key: 'name', sortable: false},
+        { title: '№ заказа', key: 'order_id', sortable: false},
         { title: 'Артикул', key: 'article' , sortable: false},
         { title: 'Прошло времени', key: 'time_passed' },
-        { title: 'Цвет', key: 'color' , sortable: false},
-        { title: 'Размер', key: 'size' , sortable: false},
-        { title: 'Откуда', key: 'marketplace' , sortable: false},
         { title: 'Печатается', key: 'is_printing' , sortable: false},
         { title: 'Готов', key: 'is_complete' , sortable: false}
       ],
