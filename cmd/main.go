@@ -20,6 +20,7 @@ import (
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/wb"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/workers/orders_updater"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/workers/queuer"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/service/workers/supplies_updater"
 )
 
 func main() {
@@ -64,6 +65,8 @@ func main() {
 	go ordersUpdater.Run(ctx)
 	queueUpdater := queuer.NewWorker(dbpool, orderStore, savepointsStore, queueStore, cardStore)
 	go queueUpdater.Run(ctx)
+	suppliesUpdater := supplies_updater.NewWorker(wbClient, orderStore, queueStore)
+	go suppliesUpdater.Run(ctx)
 
 	appAPI := api.New(queueStore, cardStore, wbClient)
 	app.Get("/api/list-queue", appAPI.ListQueue)

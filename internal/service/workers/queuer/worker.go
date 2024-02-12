@@ -17,7 +17,7 @@ import (
 
 const (
 	delayInterval = 10 * time.Second
-	limitOrders   = 5
+	limitOrders   = 50
 	savepointName = "queuer_worker_last_id"
 )
 

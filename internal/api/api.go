@@ -30,6 +30,7 @@ type ListResponse struct {
 
 type QueueItem struct {
 	ID          int64            `json:"id"`
+	OrderID     int64            `json:"order_id"`
 	Name        string           `json:"name"`
 	Article     string           `json:"article"`
 	Color       card.Color       `json:"color"`
@@ -92,6 +93,7 @@ func makeResponseItems(items []queue.Item, cards map[string]card.Card, childrens
 
 		result = append(result, QueueItem{
 			ID:          item.ID,
+			OrderID:     item.OrderID,
 			Name:        card.Name,
 			Article:     item.Article,
 			Color:       card.Color,
@@ -119,6 +121,7 @@ func makeItems(items []queue.Item, cards map[string]card.Card) []QueueItem {
 		card := cards[item.Article]
 		result = append(result, QueueItem{
 			ID:          item.ID,
+			OrderID:     item.OrderID,
 			Name:        card.Name,
 			Article:     item.Article,
 			Color:       card.Color,

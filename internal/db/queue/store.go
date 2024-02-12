@@ -151,3 +151,19 @@ func (s *Store) GetList(ctx context.Context, filter ListFilter) ([]Item, error) 
 
 	return items, errors.Wrap(err, "pgxscan.Select")
 }
+
+func (s *Store) SetCompleteByOrderIDs(ctx context.Context, orderIDs []int64) error {
+	qb := sq.Update(TableName).
+		Set(IsCompleteColumn, true).
+		Where(sq.Eq{OrderIDColumn: orderIDs}).
+		PlaceholderFormat(sq.Dollar)
+
+	query, args, err := qb.ToSql()
+	if err != nil {
+		return errors.Wrap(err, "sq.ToSql")
+	}
+
+	_, err = s.dbPool.Exec(ctx, query, args...)
+
+	return errors.Wrap(err, "dbPool.Exec")
+}
