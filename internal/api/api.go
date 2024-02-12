@@ -136,7 +136,7 @@ func makeItems(items []queue.Item, cards map[string]card.Card) []QueueItem {
 }
 
 func getTimeLeft(orderCreatedAt time.Time) string {
-	diff := time.Now().Sub(orderCreatedAt)
+	diff := time.Since(orderCreatedAt)
 	hours := int(diff.Hours())
 	return fmt.Sprintf("%d ч. %d мин.", hours, int(diff.Minutes())-hours*60)
 }
