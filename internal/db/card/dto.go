@@ -5,7 +5,6 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/alleswebdev/marketplace-3d-factory/internal/db/sku"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/wb"
 )
 
@@ -48,36 +47,22 @@ const (
 	MpOzon Marketplace = "ozon"
 )
 
-func convertCards(wbCards []wb.Card) []Card {
+// nolint
+func ConvertCards(wbCards []wb.Card) []Card {
 	result := make([]Card, 0, len(wbCards))
 	for _, item := range wbCards {
 		convertItem := Card{
-			ID:      uuid.MustParse(item.NmUUID),
-			Name:    item.Title,
-			Article: item.VendorCode,
+			ID:          uuid.MustParse(item.NmUUID),
+			Name:        item.Title,
+			Article:     item.VendorCode,
+			Color:       ColorOrange,
+			Size:        SizeStandart,
+			Marketplace: MpWb,
+			IsComposite: false,
 		}
 
 		if len(item.Photos) > 0 {
 			convertItem.Photo = item.Photos[0].Big
-		}
-
-		result = append(result, convertItem)
-	}
-
-	return result
-}
-
-func convertCards2sku(wbCards []wb.Card) []sku.SKU {
-	result := make([]sku.SKU, 0, len(wbCards))
-	for _, item := range wbCards {
-		convertItem := sku.SKU{
-			NmID:        uuid.MustParse(item.NmUUID),
-			Name:        item.Title,
-			Articles:    []string{item.VendorCode},
-			Color:       sku.ColorBlack,
-			Size:        sku.SizeStandart,
-			Marketplace: sku.MpWb,
-			IsComposite: false,
 		}
 
 		result = append(result, convertItem)

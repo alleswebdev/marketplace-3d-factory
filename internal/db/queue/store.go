@@ -11,14 +11,14 @@ import (
 )
 
 const (
-	TableName        = "queue"
-	IDColumn         = "id"
-	OrderIDColumn    = "order_id"
-	ArticleColumn    = "article"
-	ParentColumn     = "parent"
-	IsCompleteColumn = "is_complete"
-	IsPrintingColumn = "is_printing"
-	CreatedAtColumn  = "order_created_at"
+	TableName            = "queue"
+	IDColumn             = "id"
+	OrderIDColumn        = "order_id"
+	ArticleColumn        = "article"
+	ParentColumn         = "parent"
+	IsCompleteColumn     = "is_complete"
+	IsPrintingColumn     = "is_printing"
+	OrderCreatedAtColumn = "order_created_at"
 )
 
 type Store struct {
@@ -37,7 +37,7 @@ func NewStoreWithTx(txConn db.Conn) *Store {
 
 func (s *Store) AddQueueItems(ctx context.Context, items []Item) error {
 	qb := sq.Insert(TableName).
-		Columns(OrderIDColumn, ArticleColumn, ParentColumn, CreatedAtColumn).
+		Columns(OrderIDColumn, ArticleColumn, ParentColumn, OrderCreatedAtColumn).
 		PlaceholderFormat(sq.Dollar)
 
 	for _, item := range items {
@@ -110,25 +110,36 @@ type ListFilter struct {
 func (s *Store) GetList(ctx context.Context, filter ListFilter) ([]Item, error) {
 	qb := sq.Select("*").
 		From(TableName).
+		OrderBy(OrderCreatedAtColumn).
 		PlaceholderFormat(sq.Dollar)
 
-	wheres := sq.And{}
+	wheres := sq.Or{}
 
-	if !filter.WithChildrenComplete {
-		wheres = append(wheres, sq.And{
-			sq.NotEq{ParentColumn: 0},
-			sq.Eq{IsCompleteColumn: false},
-		})
-	}
+	//if !filter.WithChildrenComplete {
+	//	wheres = append(wheres, sq.And{
+	//		sq.NotEq{ParentColumn: 0},
+	//		sq.Eq{IsCompleteColumn: false},
+	//	})
+	//} else {
+	//	wheres = append(wheres, sq.And{
+	//		sq.NotEq{ParentColumn: 0},
+	//		sq.Eq{IsCompleteColumn: true},
+	//	})
+	//}
 
 	if !filter.WithParentComplete {
 		wheres = append(wheres, sq.And{
 			sq.Eq{ParentColumn: 0},
 			sq.Eq{IsCompleteColumn: false},
 		})
+		wheres = append(wheres, sq.And{
+			sq.NotEq{ParentColumn: 0},
+		})
 	}
 
-	qb.Where(wheres)
+	if len(wheres) > 0 {
+		qb = qb.Where(wheres)
+	}
 
 	query, args, err := qb.ToSql()
 	if err != nil {

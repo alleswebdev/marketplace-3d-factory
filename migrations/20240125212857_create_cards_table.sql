@@ -4,7 +4,7 @@ CREATE TABLE cards (
                        name    TEXT NOT NULL,
                        article TEXT NOT NULL,
                        photo   TEXT DEFAULT NULL,
-                       articles TEXT[] NOT NULL,
+                       articles TEXT[] DEFAULT '{}'::text[],
                        color TEXT DEFAULT 'standart',
                        size TEXT DEFAULT 'standart',
                        marketplace TEXT DEFAULT 'wb',

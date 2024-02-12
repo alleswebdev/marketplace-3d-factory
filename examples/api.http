@@ -19,3 +19,7 @@ Content-Type: application/json
 ### list-queue
 GET {{host}}/api/list-queue?withParentComplete=true&withChildrenComplete=true
 Content-Type: application/json
+
+### update cards
+GET {{host}}/api/update-cards
+Content-Type: application/json
