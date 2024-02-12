@@ -68,7 +68,7 @@ func (w Worker) update(ctx context.Context) error {
 			if supply.Done {
 				continue
 			}
-			suppliesIDs = append(suppliesIDs, supply.Id)
+			suppliesIDs = append(suppliesIDs, supply.ID)
 		}
 	}
 
@@ -78,12 +78,12 @@ func (w Worker) update(ctx context.Context) error {
 		//todo расспаралелить тут запросы, если вб не ограничивает лимиты на эту ручку
 		resp, err := w.wbClient.GetSupplyOrders(ctx, supplyID)
 		if err != nil {
-			log.Printf(errors.Wrap(err, "wbClient.GetSupplyOrders").Error())
+			log.Println(errors.Wrap(err, "wbClient.GetSupplyOrders").Error())
 			continue
 		}
 
 		for _, order := range resp.Orders {
-			orderIDs = append(orderIDs, order.Id)
+			orderIDs = append(orderIDs, order.ID)
 		}
 	}
 

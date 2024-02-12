@@ -98,7 +98,7 @@ type SuppliesResponse struct {
 	Supplies []struct {
 		ClosedAt  time.Time   `json:"closedAt"`
 		ScanDt    interface{} `json:"scanDt"`
-		Id        string      `json:"id"`
+		ID        string      `json:"id"`
 		Name      string      `json:"name"`
 		CreatedAt time.Time   `json:"createdAt"`
 		CargoType int         `json:"cargoType"`
@@ -110,16 +110,16 @@ type SuppliesResponse struct {
 type SupplyOrdersResponse struct {
 	Orders []struct {
 		User                  interface{} `json:"user"`
-		OrderUid              string      `json:"orderUid"`
+		OrderUID              string      `json:"orderUid"`
 		Article               string      `json:"article"`
 		Rid                   string      `json:"rid"`
 		CreatedAt             time.Time   `json:"createdAt"`
 		Offices               []string    `json:"offices"`
 		Skus                  []string    `json:"skus"`
-		Id                    int64       `json:"id"`
-		WarehouseId           int         `json:"warehouseId"`
-		NmId                  int         `json:"nmId"`
-		ChrtId                int         `json:"chrtId"`
+		ID                    int64       `json:"id"`
+		WarehouseID           int         `json:"warehouseId"`
+		NmID                  int         `json:"nmId"`
+		ChrtID                int         `json:"chrtId"`
 		Price                 int         `json:"price"`
 		ConvertedPrice        int         `json:"convertedPrice"`
 		CurrencyCode          int         `json:"currencyCode"`
