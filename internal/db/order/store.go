@@ -70,13 +70,26 @@ func (s *Store) AddOrders(ctx context.Context, orders []Order) error {
 	return errors.Wrap(err, "dbPool.Exec")
 }
 
-func (s *Store) GetLastOrders(ctx context.Context, lastCreatedAt time.Time, limit int64) ([]Order, error) {
+func (s *Store) GetLastOrders(ctx context.Context, lastCreatedAt time.Time, lastID int64, limit int64) ([]Order, error) {
 	qb := sq.Select("*").
 		From(tableName).
-		Where(sq.Gt{orderCreatedAtColumn: lastCreatedAt}).
 		Limit(uint64(limit)).
-		OrderBy(orderCreatedAtColumn).
+		OrderBy(orderCreatedAtColumn, idColumn).
 		PlaceholderFormat(sq.Dollar)
+
+	if lastID != 0 {
+		qb = qb.Where(
+			sq.Or{
+				sq.Gt{orderCreatedAtColumn: lastCreatedAt},
+				sq.And{
+					sq.Eq{orderCreatedAtColumn: lastCreatedAt},
+					sq.Gt{idColumn: lastID},
+				},
+			},
+		)
+	} else {
+		qb = qb.Where(sq.GtOrEq{orderCreatedAtColumn: lastCreatedAt})
+	}
 
 	query, args, err := qb.ToSql()
 	if err != nil {

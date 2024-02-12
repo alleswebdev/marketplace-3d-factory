@@ -3,7 +3,6 @@ package savepoint
 import (
 	"context"
 	"fmt"
-	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/v2/pgxscan"
@@ -27,7 +26,7 @@ func New(dbPool *pgxpool.Pool) Store {
 	return Store{dbPool: dbPool}
 }
 
-func (s *Store) SetByName(ctx context.Context, name string, value time.Time) error {
+func (s *Store) SetByName(ctx context.Context, name string, value Value) error {
 	qb := sq.Insert(tableName).
 		Columns(nameColumn, valueColumn).
 		Values(name, value).

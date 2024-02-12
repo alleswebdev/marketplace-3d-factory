@@ -56,12 +56,12 @@ func (w Worker) Run(ctx context.Context) {
 }
 
 func (w Worker) do(ctx context.Context) error {
-	savepoint, err := w.savepointStore.GetByName(ctx, savepointName)
+	sp, err := w.savepointStore.GetByName(ctx, savepointName)
 	if err != nil {
 		return errors.Wrap(err, "savepointStore.GetByName")
 	}
 
-	orders, err := w.ordersStore.GetLastOrders(ctx, savepoint.Value, limitOrders)
+	orders, err := w.ordersStore.GetLastOrders(ctx, sp.Value.Time, sp.Value.ID, limitOrders)
 	if err != nil {
 		return errors.Wrap(err, "ordersStore.GetLastOrders")
 	}
@@ -114,7 +114,10 @@ func (w Worker) do(ctx context.Context) error {
 		}
 
 		lastItem := queueItems[len(queueItems)-1]
-		err = w.savepointStore.SetByName(ctx, savepointName, lastItem.OrderCreatedAt)
+		err = w.savepointStore.SetByName(ctx, savepointName, savepoint.Value{
+			ID:   lastItem.OrderID,
+			Time: lastItem.OrderCreatedAt,
+		})
 		return errors.Wrap(err, "savepointStore.SetByName")
 	})
 
