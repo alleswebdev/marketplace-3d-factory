@@ -6,6 +6,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/order"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/wb"
 )
@@ -34,28 +36,33 @@ func (w Worker) Run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		default:
-			w.update(ctx)
+			err := w.update(ctx)
+			if err != nil {
+				log.Printf("orders_updater:%s\n", err)
+			}
 			time.Sleep(delayInterval)
 		}
 	}
 }
 
-func (w Worker) update(ctx context.Context) {
+func (w Worker) update(ctx context.Context) error {
 	resp, err := w.ordersClient.GetNewOrders(ctx)
 	if err != nil {
-		log.Fatal(err)
+		return errors.Wrap(err, "ordersClient.GetNewOrders")
 	}
 
 	if len(resp.Orders) <= 0 {
-		return
+		return nil
 	}
 
 	err = w.ordersStore.AddOrders(ctx, convertOrders(resp.Orders))
 	if err != nil {
-		log.Fatal(err)
+		return errors.Wrap(err, "ordersStore.AddOrders")
 	}
 
 	log.Println("orders updated")
+
+	return nil
 }
 
 func convertOrders(wbOrders []wb.Order) []order.Order {
