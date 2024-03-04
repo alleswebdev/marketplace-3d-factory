@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/db/card"
 )
 
 const (
@@ -33,7 +34,7 @@ func (s *Store) SetMarketplace(marketplace string) {
 }
 func (s *Store) GetMarketplace() string {
 	if len(s.marketplace) == 0 {
-		return "wb"
+		return card.MpWb.String()
 	}
 
 	return s.marketplace
@@ -127,7 +128,7 @@ func (s *Store) GetList(ctx context.Context, filter ListFilter) ([]Item, error) 
 		OrderBy(OrderCreatedAtColumn).
 		PlaceholderFormat(sq.Dollar)
 
-	if s.GetMarketplace() == "ozon" {
+	if s.GetMarketplace() == card.MpOzon.String() {
 		qb = qb.OrderBy(OrderShipmentColumn)
 	}
 

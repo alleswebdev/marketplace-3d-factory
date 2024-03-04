@@ -49,11 +49,11 @@ func (w Worker) Run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		default:
-			err := w.do(ctx, wbSavepointName, "wb")
+			err := w.do(ctx, wbSavepointName, card.MpWb.String())
 			if err != nil {
 				log.Printf("wb queuer:%s\n", err)
 			}
-			err = w.do(ctx, ozonSavepointName, "wb")
+			err = w.do(ctx, ozonSavepointName, card.MpOzon.String())
 			if err != nil {
 				log.Printf("ozon queuer:%s\n", err)
 			}
@@ -68,7 +68,7 @@ func (w Worker) do(ctx context.Context, savepointName string, marketplace string
 		return errors.Wrap(err, "savepointStore.GetByName")
 	}
 
-	orders, err := w.ordersStore.GetLastOrders(ctx, sp.Value.Time, sp.Value.ID, limitOrders)
+	orders, err := w.ordersStore.GetLastOrders(ctx, marketplace, sp.Value.Time, sp.Value.ID, limitOrders)
 	if err != nil {
 		return errors.Wrap(err, "ordersStore.GetLastOrders")
 	}
@@ -138,6 +138,6 @@ func (w Worker) do(ctx context.Context, savepointName string, marketplace string
 		return errors.Wrap(err, "db.TransactionWrapper")
 	}
 
-	log.Println("queue items added")
+	log.Println(marketplace + " queue items added")
 	return nil
 }

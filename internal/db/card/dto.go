@@ -47,6 +47,10 @@ const (
 	MpOzon Marketplace = "ozon"
 )
 
+func (m Marketplace) String() string {
+	return string(m)
+}
+
 // nolint
 func ConvertCards(wbCards []wb.Card) []Card {
 	result := make([]Card, 0, len(wbCards))

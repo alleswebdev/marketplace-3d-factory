@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/alleswebdev/marketplace-3d-factory/internal/db/card"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/order"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/ozon"
 )
@@ -38,7 +39,7 @@ func (w Worker) Run(ctx context.Context) {
 		default:
 			err := w.update(ctx)
 			if err != nil {
-				log.Printf("orders_updater:%s\n", err)
+				log.Printf("ozon_orders_updater:%s\n", err)
 			}
 			time.Sleep(delayInterval)
 		}
@@ -60,7 +61,7 @@ func (w Worker) update(ctx context.Context) error {
 		return errors.Wrap(err, "ordersStore.AddOrders")
 	}
 
-	log.Println("orders updated")
+	log.Println("ozon orders updated")
 
 	return nil
 }
@@ -71,13 +72,16 @@ func convertRespToOrders(resp ozon.UnfulfilledListResponse) []order.Order {
 	for _, item := range postings {
 		for _, product := range item.Products {
 			result = append(result, order.Order{
-				ID:      item.OrderID,
-				Article: product.OfferID,
+				ID:          item.OrderID,
+				Article:     product.OfferID,
+				Marketplace: card.MpOzon.String(),
 				OrderCreatedAt: sql.NullTime{
-					Time: item.InProcessAt,
+					Time:  item.InProcessAt,
+					Valid: true,
 				},
 				OrderShipmentAt: sql.NullTime{
-					Time: item.ShipmentDate,
+					Time:  item.ShipmentDate,
+					Valid: true,
 				},
 			})
 		}

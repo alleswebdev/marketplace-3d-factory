@@ -72,11 +72,12 @@ func (s *Store) AddOrders(ctx context.Context, orders []Order) error {
 	return errors.Wrap(err, "dbPool.Exec")
 }
 
-func (s *Store) GetLastOrders(ctx context.Context, lastCreatedAt time.Time, lastID int64, limit int64) ([]Order, error) {
+func (s *Store) GetLastOrders(ctx context.Context, marketplace string, lastCreatedAt time.Time, lastID int64, limit int64) ([]Order, error) {
 	qb := sq.Select("*").
 		From(tableName).
 		Limit(uint64(limit)).
 		OrderBy(orderCreatedAtColumn, idColumn).
+		Where(sq.Eq{marketplaceColumn: marketplace}).
 		PlaceholderFormat(sq.Dollar)
 
 	if lastID != 0 {
