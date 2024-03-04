@@ -14,11 +14,13 @@ import (
 const (
 	tableName = "orders"
 
-	idColumn             = "id"
-	articleColumn        = "article"
-	orderCreatedAtColumn = "order_created_at"
-	createdAtColumn      = "created_at"
-	updatedAtColumn      = "updated_at"
+	idColumn                = "id"
+	articleColumn           = "article"
+	orderCreatedAtColumn    = "order_created_at"
+	orderShipmentDateColumn = "order_shipment_date"
+	createdAtColumn         = "created_at"
+	updatedAtColumn         = "updated_at"
+	marketplaceColumn       = "marketplace"
 )
 
 type Store struct {
@@ -31,8 +33,8 @@ func New(dbPool *pgxpool.Pool) Store {
 
 func (s *Store) AddOrder(ctx context.Context, order Order) error {
 	qb := sq.Insert(tableName).
-		Columns(idColumn, articleColumn, orderCreatedAtColumn).
-		Values(order.ID, order.Article, order.OrderCreatedAt).
+		Columns(idColumn, articleColumn, orderCreatedAtColumn, orderShipmentDateColumn, marketplaceColumn).
+		Values(order.ID, order.Article, order.OrderCreatedAt, order.OrderShipmentAt, order.Marketplace).
 		Suffix(
 			fmt.Sprintf(`ON CONFLICT(%s) DO NOTHING`, idColumn),
 		).
@@ -50,14 +52,14 @@ func (s *Store) AddOrder(ctx context.Context, order Order) error {
 
 func (s *Store) AddOrders(ctx context.Context, orders []Order) error {
 	qb := sq.Insert(tableName).
-		Columns(idColumn, articleColumn, orderCreatedAtColumn).
+		Columns(idColumn, articleColumn, orderCreatedAtColumn, orderShipmentDateColumn, marketplaceColumn).
 		Suffix(
 			fmt.Sprintf(`ON CONFLICT(%s) DO NOTHING`, idColumn),
 		).
 		PlaceholderFormat(sq.Dollar)
 
 	for _, item := range orders {
-		qb = qb.Values(item.ID, item.Article, item.OrderCreatedAt.Time)
+		qb = qb.Values(item.ID, item.Article, item.OrderCreatedAt.Time, item.OrderShipmentAt, item.Marketplace)
 	}
 
 	query, args, err := qb.ToSql()

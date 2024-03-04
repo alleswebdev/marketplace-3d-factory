@@ -7,10 +7,12 @@ import (
 )
 
 type Config struct {
-	Port        int
-	Name        string
-	WbToken     string
-	DatabaseURL string
+	Port         int
+	Name         string
+	WbToken      string
+	OzonToken    string
+	OzonClientID string
+	DatabaseURL  string
 }
 
 func GetAppConfig() Config {

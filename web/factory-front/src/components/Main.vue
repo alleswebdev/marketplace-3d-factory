@@ -26,9 +26,6 @@
             </v-card></td>
           <td>{{ item.article }}</td>
           <td>{{ item.time_passed }}</td>
-          <td>{{ item.color }}</td>
-          <td>{{ item.size }}</td>
-          <td>{{ item.marketplace }}</td>
           <td>  <v-checkbox v-model="item.is_printing" @change="setIsPrinting(item)"></v-checkbox> </td>
           <td>  <v-checkbox v-model="item.is_complete" @change="setIsComplete(item)"></v-checkbox> </td>
         </tr>
