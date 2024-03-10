@@ -7,21 +7,24 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/card"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/queue"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/service/ozon"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/wb"
 )
 
 type FactoryAPI struct {
 	queueStore queue.Store
 	cardStore  card.Store
-	wbClient   wb.Client //todo перенести в воркер
+	wbClient   wb.Client   //todo перенести в воркер обновление карточек
+	ozonClient ozon.Client //todo перенести в воркер
 }
 
-func New(queueStore queue.Store, cardStore card.Store, wbClient wb.Client) FactoryAPI {
-	return FactoryAPI{queueStore: queueStore, cardStore: cardStore, wbClient: wbClient}
+func New(queueStore queue.Store, cardStore card.Store, wbClient wb.Client, ozonClient ozon.Client) FactoryAPI {
+	return FactoryAPI{queueStore: queueStore, cardStore: cardStore, wbClient: wbClient, ozonClient: ozonClient}
 }
 
 type ListResponse struct {
@@ -51,6 +54,7 @@ func (a FactoryAPI) ListQueue(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, errors.Wrap(err, "QueryParser").Error())
 	}
 
+	//todo queueStore.setMarketplace
 	queueItems, err := a.queueStore.GetList(c.Context(), filter)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, errors.Wrap(err, "queueStore.GetAllItems").Error())
@@ -179,12 +183,10 @@ func (a FactoryAPI) SetPrinting(c *fiber.Ctx) error {
 	return c.SendStatus(http.StatusOK)
 }
 
-func (a FactoryAPI) UpdateCards(c *fiber.Ctx) error {
+func (a FactoryAPI) UpdateWBCards(c *fiber.Ctx) error {
 	cardsResp, err := a.wbClient.GetCardsList(c.Context())
 	if err != nil {
-		if err != nil {
-			return fiber.NewError(fiber.StatusInternalServerError, errors.Wrap(err, "wbClient.GetCardsList").Error())
-		}
+		return fiber.NewError(fiber.StatusInternalServerError, errors.Wrap(err, "wbClient.GetCardsList").Error())
 	}
 
 	err = a.cardStore.AddCards(c.Context(), card.ConvertCards(cardsResp.Cards))
@@ -193,4 +195,47 @@ func (a FactoryAPI) UpdateCards(c *fiber.Ctx) error {
 	}
 
 	return c.SendStatus(http.StatusOK)
+}
+
+func (a FactoryAPI) UpdateOzonCards(c *fiber.Ctx) error {
+	ctx := c.Context()
+	cardsResp, err := a.ozonClient.GetProductList(ctx)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, errors.Wrap(err, "ozonClient.GetProductList").Error())
+	}
+
+	productIDs := make([]int64, 0, len(cardsResp.Result.Items))
+	for _, item := range cardsResp.Result.Items {
+		productIDs = append(productIDs, item.ProductID)
+	}
+
+	products, err := a.ozonClient.GetProductInfoList(ctx, productIDs)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, errors.Wrap(err, "ozonClient.GetProductInfoList").Error())
+	}
+
+	err = a.cardStore.AddCards(c.Context(), ConvertProductResponseToCards(products))
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, errors.Wrap(err, "cardStore.AddCards").Error())
+	}
+
+	return c.SendStatus(http.StatusOK)
+}
+
+func ConvertProductResponseToCards(productsResponse ozon.ProductListInfoResponse) []card.Card {
+	result := make([]card.Card, 0, len(productsResponse.Result.Items))
+	for _, item := range productsResponse.Result.Items {
+		convertItem := card.Card{
+			ID:          uuid.New(),
+			Name:        item.Name,
+			Article:     item.OfferID,
+			Marketplace: card.MpOzon,
+			IsComposite: false,
+			Photo:       item.PrimaryImage,
+		}
+
+		result = append(result, convertItem)
+	}
+
+	return result
 }

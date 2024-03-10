@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/db/card"
 )
 
 const (
@@ -19,10 +20,24 @@ const (
 	IsCompleteColumn     = "is_complete"
 	IsPrintingColumn     = "is_printing"
 	OrderCreatedAtColumn = "order_created_at"
+	OrderShipmentColumn  = "order_shipment_date"
+	MarketplaceColumn    = "marketplace"
 )
 
 type Store struct {
-	dbPool db.Conn
+	dbPool      db.Conn
+	marketplace string
+}
+
+func (s *Store) SetMarketplace(marketplace string) {
+	s.marketplace = marketplace
+}
+func (s *Store) GetMarketplace() string {
+	if len(s.marketplace) == 0 {
+		return card.MpWb.String()
+	}
+
+	return s.marketplace
 }
 
 func New(dbPool db.Conn) Store {
@@ -37,11 +52,11 @@ func NewStoreWithTx(txConn db.Conn) *Store {
 
 func (s *Store) AddQueueItems(ctx context.Context, items []Item) error {
 	qb := sq.Insert(TableName).
-		Columns(OrderIDColumn, ArticleColumn, ParentColumn, OrderCreatedAtColumn).
+		Columns(OrderIDColumn, ArticleColumn, ParentColumn, OrderCreatedAtColumn, OrderShipmentColumn, MarketplaceColumn).
 		PlaceholderFormat(sq.Dollar)
 
 	for _, item := range items {
-		qb = qb.Values(item.OrderID, item.Article, item.Parent, item.OrderCreatedAt)
+		qb = qb.Values(item.OrderID, item.Article, item.Parent, item.OrderCreatedAt, item.OrderShipmentAt, item.Marketplace)
 	}
 
 	query, args, err := qb.ToSql()
@@ -103,8 +118,17 @@ func (s *Store) SetPrinting(ctx context.Context, id int64, isPrinting bool) erro
 }
 
 type ListFilter struct {
-	WithParentComplete   bool `json:"withParentComplete"`
-	WithChildrenComplete bool `json:"withChildrenComplete"`
+	WithParentComplete   bool   `json:"withParentComplete"`
+	WithChildrenComplete bool   `json:"withChildrenComplete"`
+	Marketplace          string `json:"marketplace"`
+}
+
+func (f ListFilter) GetMarketplace() string {
+	if len(f.Marketplace) == 0 {
+		return card.MpWb.String()
+	}
+
+	return f.Marketplace
 }
 
 func (s *Store) GetList(ctx context.Context, filter ListFilter) ([]Item, error) {
@@ -112,6 +136,12 @@ func (s *Store) GetList(ctx context.Context, filter ListFilter) ([]Item, error) 
 		From(TableName).
 		OrderBy(OrderCreatedAtColumn).
 		PlaceholderFormat(sq.Dollar)
+
+	if filter.GetMarketplace() == card.MpOzon.String() {
+		qb = qb.OrderBy(OrderShipmentColumn)
+	}
+
+	qb = qb.Where(sq.Eq{MarketplaceColumn: filter.GetMarketplace()})
 
 	wheres := sq.Or{}
 
