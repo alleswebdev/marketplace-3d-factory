@@ -118,8 +118,17 @@ func (s *Store) SetPrinting(ctx context.Context, id int64, isPrinting bool) erro
 }
 
 type ListFilter struct {
-	WithParentComplete   bool `json:"withParentComplete"`
-	WithChildrenComplete bool `json:"withChildrenComplete"`
+	WithParentComplete   bool   `json:"withParentComplete"`
+	WithChildrenComplete bool   `json:"withChildrenComplete"`
+	Marketplace          string `json:"marketplace"`
+}
+
+func (f ListFilter) GetMarketplace() string {
+	if len(f.Marketplace) == 0 {
+		return card.MpWb.String()
+	}
+
+	return f.Marketplace
 }
 
 func (s *Store) GetList(ctx context.Context, filter ListFilter) ([]Item, error) {
@@ -128,11 +137,11 @@ func (s *Store) GetList(ctx context.Context, filter ListFilter) ([]Item, error) 
 		OrderBy(OrderCreatedAtColumn).
 		PlaceholderFormat(sq.Dollar)
 
-	if s.GetMarketplace() == card.MpOzon.String() {
+	if filter.GetMarketplace() == card.MpOzon.String() {
 		qb = qb.OrderBy(OrderShipmentColumn)
 	}
 
-	qb = qb.Where(sq.Eq{MarketplaceColumn: s.GetMarketplace()})
+	qb = qb.Where(sq.Eq{MarketplaceColumn: filter.GetMarketplace()})
 
 	wheres := sq.Or{}
 

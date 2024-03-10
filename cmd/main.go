@@ -27,6 +27,7 @@ import (
 
 func main() {
 	cfg := config.GetAppConfig()
+	_ = os.Setenv("MARKETPLACE_APP_HOST", cfg.Host)
 
 	app := fiber.New(fiber.Config{
 		Prefork:       false,
@@ -73,7 +74,7 @@ func main() {
 	queueUpdater := queuer.NewWorker(dbpool, orderStore, savepointsStore, cardStore)
 	go queueUpdater.Run(ctx)
 
-	suppliesUpdater := supplies_updater.NewWorker(wbClient, orderStore, queueStore)
+	suppliesUpdater := supplies_updater.NewWorker(wbClient, ozonClient, orderStore, queueStore)
 	go suppliesUpdater.Run(ctx)
 
 	appAPI := api.New(queueStore, cardStore, wbClient, ozonClient)

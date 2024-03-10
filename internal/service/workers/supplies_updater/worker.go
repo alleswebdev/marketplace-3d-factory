@@ -22,11 +22,12 @@ type Worker struct {
 	queueStore  queue.Store
 }
 
-func NewWorker(wbClient wb.Client, ordersStore order.Store, queueStore queue.Store) Worker {
+func NewWorker(wbClient wb.Client, ozonClient ozon.Client, ordersStore order.Store, queueStore queue.Store) Worker {
 	return Worker{
 		wbClient:    wbClient,
 		ordersStore: ordersStore,
 		queueStore:  queueStore,
+		ozonClient:  ozonClient,
 	}
 }
 

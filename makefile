@@ -1,4 +1,5 @@
 PG_DSN="user=postgres password=example host=localhost port=5432 database=test sslmode=disable"
+export CGO_ENABLED=0
 
 .PHONY: run
 run:
@@ -6,7 +7,6 @@ run:
 
 .PHONY: build
 build:
-	export CGO_ENABLED=0
 	go build -ldflags "-X main.version=1.0.0 -X main.buildTime=$(date -u '+%Y-%m-%d_%H:%M:%S')" -o 3dfactory ./cmd
 
 .PHONY: lint

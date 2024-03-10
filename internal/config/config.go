@@ -8,6 +8,7 @@ import (
 
 type Config struct {
 	Port         int
+	Host         string
 	Name         string
 	WbToken      string
 	OzonToken    string
