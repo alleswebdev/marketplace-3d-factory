@@ -17,4 +17,11 @@ type Item struct {
 	OrderShipmentAt time.Time    `db:"order_shipment_date"`
 	CreatedAt       sql.NullTime `db:"created_at"`
 	UpdatedAt       sql.NullTime `db:"updated_at"`
+	Info            Info         `db:"info"`
+}
+
+type Info struct {
+	OrderNumber     string    `json:"order_number"`
+	OrderShipmentAt time.Time `json:"order_shipment_date"`
+	Quantity        int32     `json:"quantity"`
 }

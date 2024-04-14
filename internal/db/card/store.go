@@ -38,7 +38,7 @@ func (s *Store) AddCards(ctx context.Context, cards []Card) error {
 	qb := sq.Insert(tableName).
 		Columns(idColumn, nameColumn, articleColumn, photoColumn, marketplaceColumn).
 		Suffix(
-			fmt.Sprintf(`ON CONFLICT(%s) DO NOTHING`, idColumn),
+			fmt.Sprintf(`ON CONFLICT(%s, %s) DO NOTHING`, articleColumn, marketplaceColumn),
 		).
 		PlaceholderFormat(sq.Dollar)
 

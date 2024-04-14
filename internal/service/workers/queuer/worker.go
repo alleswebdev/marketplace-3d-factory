@@ -91,25 +91,42 @@ func (w Worker) do(ctx context.Context, savepointName string, marketplace string
 			continue
 		}
 
-		queueItems = append(queueItems, queue.Item{
-			OrderID:         order.ID,
-			Article:         order.Article,
-			OrderCreatedAt:  order.OrderCreatedAt.Time,
-			OrderShipmentAt: order.OrderShipmentAt.Time,
-			Marketplace:     order.Marketplace,
-		})
-		if !card.IsComposite {
-			continue
+		count := int32(1)
+		if order.Info.Quantity > 0 {
+			count = order.Info.Quantity
 		}
-		for _, art := range card.Articles {
+
+		for i := int32(0); i < count; i++ {
 			queueItems = append(queueItems, queue.Item{
 				OrderID:         order.ID,
-				Article:         art,
+				Article:         order.Article,
 				OrderCreatedAt:  order.OrderCreatedAt.Time,
 				OrderShipmentAt: order.OrderShipmentAt.Time,
-				Parent:          order.ID,
 				Marketplace:     order.Marketplace,
+				Info: queue.Info{
+					OrderNumber:     order.Info.OrderNumber,
+					OrderShipmentAt: order.Info.OrderShipmentAt,
+					Quantity:        order.Info.Quantity,
+				},
 			})
+			if !card.IsComposite {
+				continue
+			}
+			for _, art := range card.Articles {
+				queueItems = append(queueItems, queue.Item{
+					OrderID:         order.ID,
+					Article:         art,
+					OrderCreatedAt:  order.OrderCreatedAt.Time,
+					OrderShipmentAt: order.OrderShipmentAt.Time,
+					Parent:          order.ID,
+					Marketplace:     order.Marketplace,
+					Info: queue.Info{
+						OrderNumber:     order.Info.OrderNumber,
+						OrderShipmentAt: order.Info.OrderShipmentAt,
+						Quantity:        order.Info.Quantity,
+					},
+				})
+			}
 		}
 	}
 
@@ -127,6 +144,7 @@ func (w Worker) do(ctx context.Context, savepointName string, marketplace string
 		}
 
 		lastItem := queueItems[len(queueItems)-1]
+
 		err = w.savepointStore.SetByName(ctx, savepointName, savepoint.Value{
 			ID:   lastItem.OrderID,
 			Time: lastItem.OrderCreatedAt,

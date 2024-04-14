@@ -14,6 +14,7 @@ import (
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/queue"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/ozon"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/wb"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/utils"
 )
 
 type FactoryAPI struct {
@@ -32,19 +33,21 @@ type ListResponse struct {
 }
 
 type QueueItem struct {
-	ID          int64            `json:"id"`
-	OrderID     int64            `json:"order_id"`
-	Name        string           `json:"name"`
-	Article     string           `json:"article"`
-	Color       card.Color       `json:"color"`
-	Size        card.Size        `json:"size"`
-	Marketplace card.Marketplace `json:"marketplace"`
-	Photo       string           `json:"photo"`
-	IsPrinting  bool             `json:"is_printing"`
-	IsComplete  bool             `json:"is_complete"`
-	Children    []QueueItem      `json:"children"`
-	TimePassed  string           `json:"time_passed"`
-	IsComposite bool             `json:"is_composite"`
+	ID           int64            `json:"id"`
+	OrderID      int64            `json:"order_id"`
+	Name         string           `json:"name"`
+	Article      string           `json:"article"`
+	Color        card.Color       `json:"color"`
+	Size         card.Size        `json:"size"`
+	Marketplace  card.Marketplace `json:"marketplace"`
+	Photo        string           `json:"photo"`
+	IsPrinting   bool             `json:"is_printing"`
+	IsComplete   bool             `json:"is_complete"`
+	Children     []QueueItem      `json:"children"`
+	TimePassed   string           `json:"time_passed"`
+	ShipmentDate string           `json:"shipment_date"`
+	IsComposite  bool             `json:"is_composite"`
+	Info         queue.Info       `json:"info"`
 }
 
 func (a FactoryAPI) ListQueue(c *fiber.Ctx) error {
@@ -54,7 +57,6 @@ func (a FactoryAPI) ListQueue(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, errors.Wrap(err, "QueryParser").Error())
 	}
 
-	//todo queueStore.setMarketplace
 	queueItems, err := a.queueStore.GetList(c.Context(), filter)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, errors.Wrap(err, "queueStore.GetAllItems").Error())
@@ -96,19 +98,21 @@ func makeResponseItems(items []queue.Item, cards map[string]card.Card, childrens
 		card := cards[item.Article]
 
 		result = append(result, QueueItem{
-			ID:          item.ID,
-			OrderID:     item.OrderID,
-			Name:        card.Name,
-			Article:     item.Article,
-			Color:       card.Color,
-			Size:        card.Size,
-			Marketplace: card.Marketplace,
-			Photo:       card.Photo,
-			IsPrinting:  item.IsPrinting,
-			IsComplete:  item.IsComplete,
-			TimePassed:  getTimeLeft(item.OrderCreatedAt),
-			Children:    childrens,
-			IsComposite: card.IsComposite,
+			ID:           item.ID,
+			OrderID:      item.OrderID,
+			Name:         card.Name,
+			Article:      item.Article,
+			Color:        card.Color,
+			Size:         card.Size,
+			Marketplace:  card.Marketplace,
+			Photo:        card.Photo,
+			IsPrinting:   item.IsPrinting,
+			IsComplete:   item.IsComplete,
+			TimePassed:   getTimePassed(item.OrderCreatedAt),
+			ShipmentDate: getShipmentDate(item.OrderShipmentAt),
+			Children:     childrens,
+			IsComposite:  card.IsComposite,
+			Info:         item.Info,
 		})
 	}
 
@@ -124,28 +128,39 @@ func makeItems(items []queue.Item, cards map[string]card.Card) []QueueItem {
 	for _, item := range items {
 		card := cards[item.Article]
 		result = append(result, QueueItem{
-			ID:          item.ID,
-			OrderID:     item.OrderID,
-			Name:        card.Name,
-			Article:     item.Article,
-			Color:       card.Color,
-			Size:        card.Size,
-			Marketplace: card.Marketplace,
-			Photo:       card.Photo,
-			IsPrinting:  item.IsPrinting,
-			IsComplete:  item.IsComplete,
-			TimePassed:  getTimeLeft(item.OrderCreatedAt),
-			IsComposite: card.IsComposite,
+			ID:           item.ID,
+			OrderID:      item.OrderID,
+			Name:         card.Name,
+			Article:      item.Article,
+			Color:        card.Color,
+			Size:         card.Size,
+			Marketplace:  card.Marketplace,
+			Photo:        card.Photo,
+			IsPrinting:   item.IsPrinting,
+			IsComplete:   item.IsComplete,
+			TimePassed:   getTimePassed(item.OrderCreatedAt),
+			ShipmentDate: getShipmentDate(item.OrderShipmentAt),
+			IsComposite:  card.IsComposite,
+			Info:         item.Info,
 		})
 	}
 
 	return result
 }
 
-func getTimeLeft(orderCreatedAt time.Time) string {
+func getTimePassed(orderCreatedAt time.Time) string {
 	diff := time.Since(orderCreatedAt)
 	hours := int(diff.Hours())
 	return fmt.Sprintf("%d ч. %d мин.", hours, int(diff.Minutes())-hours*60)
+}
+
+func getShipmentDate(shipmentAt time.Time) string {
+	if shipmentAt.IsZero() {
+		return ""
+	}
+
+	month := utils.DeclensionGenitiveMonth(int32(shipmentAt.Month()))
+	return fmt.Sprintf("%d %s", shipmentAt.Day(), month)
 }
 
 type CompleteRequest struct {

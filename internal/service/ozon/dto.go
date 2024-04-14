@@ -7,6 +7,9 @@ import (
 const (
 	StatusAwaitingPackaging = "awaiting_packaging"
 	StatusAwaitingDeliver   = "awaiting_deliver"
+	StatusDelivering        = "delivering"
+	StatusArbitration       = "arbitration"
+	StatusNotAccepted       = "not_accepted"
 )
 
 type ProductListResponse struct {
@@ -106,14 +109,14 @@ type ProductListInfoResponse struct {
 					PriceIndexValue      float64 `json:"price_index_value"`
 				} `json:"external_index_data"`
 				OzonIndexData struct {
-					MinimalPrice         string `json:"minimal_price"`
-					MinimalPriceCurrency string `json:"minimal_price_currency"`
-					PriceIndexValue      int    `json:"price_index_value"`
+					MinimalPrice         string  `json:"minimal_price"`
+					MinimalPriceCurrency string  `json:"minimal_price_currency"`
+					PriceIndexValue      float64 `json:"price_index_value"`
 				} `json:"ozon_index_data"`
 				SelfMarketplacesIndexData struct {
-					MinimalPrice         string `json:"minimal_price"`
-					MinimalPriceCurrency string `json:"minimal_price_currency"`
-					PriceIndexValue      int    `json:"price_index_value"`
+					MinimalPrice         string  `json:"minimal_price"`
+					MinimalPriceCurrency string  `json:"minimal_price_currency"`
+					PriceIndexValue      float64 `json:"price_index_value"`
 				} `json:"self_marketplaces_index_data"`
 			} `json:"price_indexes"`
 			Sku                   int `json:"sku"`

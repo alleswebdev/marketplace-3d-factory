@@ -103,7 +103,7 @@ func (w Worker) updateWb(ctx context.Context) error {
 }
 
 func (w Worker) updateOzon(ctx context.Context) error {
-	resp, err := w.ozonClient.GetUnfulfilledList(ctx, ozon.StatusAwaitingDeliver)
+	resp, err := w.ozonClient.GetUnfulfilledList(ctx, ozon.StatusDelivering)
 	if err != nil {
 		return errors.Wrap(err, "ordersClient.GetUnfulfilledList")
 	}

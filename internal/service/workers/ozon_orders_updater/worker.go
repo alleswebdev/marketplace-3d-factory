@@ -47,7 +47,7 @@ func (w Worker) Run(ctx context.Context) {
 }
 
 func (w Worker) update(ctx context.Context) error {
-	resp, err := w.ordersClient.GetUnfulfilledList(ctx, ozon.StatusAwaitingPackaging)
+	resp, err := w.ordersClient.GetUnfulfilledList(ctx, ozon.StatusAwaitingDeliver)
 	if err != nil {
 		return errors.Wrap(err, "ordersClient.GetUnfulfilledList")
 	}
@@ -82,6 +82,11 @@ func convertRespToOrders(resp ozon.UnfulfilledListResponse) []order.Order {
 				OrderShipmentAt: sql.NullTime{
 					Time:  item.ShipmentDate,
 					Valid: true,
+				},
+				Info: order.Info{
+					OrderNumber:     item.PostingNumber,
+					OrderShipmentAt: item.ShipmentDate,
+					Quantity:        int32(product.Quantity),
 				},
 			})
 		}
