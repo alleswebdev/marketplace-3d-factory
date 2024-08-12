@@ -14,11 +14,14 @@ import (
 const (
 	tableName = "orders"
 
-	idColumn             = "id"
-	articleColumn        = "article"
-	orderCreatedAtColumn = "order_created_at"
-	createdAtColumn      = "created_at"
-	updatedAtColumn      = "updated_at"
+	idColumn                = "id"
+	articleColumn           = "article"
+	orderCreatedAtColumn    = "order_created_at"
+	orderShipmentDateColumn = "order_shipment_date"
+	createdAtColumn         = "created_at"
+	updatedAtColumn         = "updated_at"
+	marketplaceColumn       = "marketplace"
+	infoColumn              = "info"
 )
 
 type Store struct {
@@ -31,8 +34,8 @@ func New(dbPool *pgxpool.Pool) Store {
 
 func (s *Store) AddOrder(ctx context.Context, order Order) error {
 	qb := sq.Insert(tableName).
-		Columns(idColumn, articleColumn, orderCreatedAtColumn).
-		Values(order.ID, order.Article, order.OrderCreatedAt).
+		Columns(idColumn, articleColumn, orderCreatedAtColumn, orderShipmentDateColumn, marketplaceColumn, infoColumn).
+		Values(order.ID, order.Article, order.OrderCreatedAt, order.OrderShipmentAt, order.Marketplace, order.Info).
 		Suffix(
 			fmt.Sprintf(`ON CONFLICT(%s) DO NOTHING`, idColumn),
 		).
@@ -50,14 +53,14 @@ func (s *Store) AddOrder(ctx context.Context, order Order) error {
 
 func (s *Store) AddOrders(ctx context.Context, orders []Order) error {
 	qb := sq.Insert(tableName).
-		Columns(idColumn, articleColumn, orderCreatedAtColumn).
+		Columns(idColumn, articleColumn, orderCreatedAtColumn, orderShipmentDateColumn, marketplaceColumn, infoColumn).
 		Suffix(
-			fmt.Sprintf(`ON CONFLICT(%s) DO NOTHING`, idColumn),
+			fmt.Sprintf(`ON CONFLICT(%s, %s) DO NOTHING`, articleColumn, idColumn),
 		).
 		PlaceholderFormat(sq.Dollar)
 
 	for _, item := range orders {
-		qb = qb.Values(item.ID, item.Article, item.OrderCreatedAt.Time)
+		qb = qb.Values(item.ID, item.Article, item.OrderCreatedAt.Time, item.OrderShipmentAt, item.Marketplace, item.Info)
 	}
 
 	query, args, err := qb.ToSql()
@@ -70,11 +73,12 @@ func (s *Store) AddOrders(ctx context.Context, orders []Order) error {
 	return errors.Wrap(err, "dbPool.Exec")
 }
 
-func (s *Store) GetLastOrders(ctx context.Context, lastCreatedAt time.Time, lastID int64, limit int64) ([]Order, error) {
+func (s *Store) GetLastOrders(ctx context.Context, marketplace string, lastCreatedAt time.Time, lastID int64, limit int64) ([]Order, error) {
 	qb := sq.Select("*").
 		From(tableName).
 		Limit(uint64(limit)).
 		OrderBy(orderCreatedAtColumn, idColumn).
+		Where(sq.Eq{marketplaceColumn: marketplace}).
 		PlaceholderFormat(sq.Dollar)
 
 	if lastID != 0 {

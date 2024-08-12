@@ -36,14 +36,14 @@ func New(dbPool *pgxpool.Pool) Store {
 
 func (s *Store) AddCards(ctx context.Context, cards []Card) error {
 	qb := sq.Insert(tableName).
-		Columns(idColumn, nameColumn, articleColumn, photoColumn).
+		Columns(idColumn, nameColumn, articleColumn, photoColumn, marketplaceColumn).
 		Suffix(
-			fmt.Sprintf(`ON CONFLICT(%s) DO NOTHING`, idColumn),
+			fmt.Sprintf(`ON CONFLICT(%s, %s) DO NOTHING`, articleColumn, marketplaceColumn),
 		).
 		PlaceholderFormat(sq.Dollar)
 
 	for _, item := range cards {
-		qb = qb.Values(item.ID, item.Name, item.Article, item.Photo)
+		qb = qb.Values(item.ID, item.Name, item.Article, item.Photo, item.Marketplace)
 	}
 
 	query, args, err := qb.ToSql()

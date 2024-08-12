@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/alleswebdev/marketplace-3d-factory/internal/db/card"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/order"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/wb"
 )
@@ -69,8 +70,9 @@ func convertOrders(wbOrders []wb.Order) []order.Order {
 	result := make([]order.Order, 0, len(wbOrders))
 	for _, item := range wbOrders {
 		result = append(result, order.Order{
-			ID:      item.ID,
-			Article: item.Article,
+			ID:          item.ID,
+			Article:     item.Article,
+			Marketplace: card.MpWb.String(),
 			OrderCreatedAt: sql.NullTime{
 				Time: item.CreatedAt,
 			},

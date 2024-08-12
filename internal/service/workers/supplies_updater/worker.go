@@ -9,6 +9,7 @@ import (
 
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/order"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/queue"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/service/ozon"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/wb"
 )
 
@@ -16,15 +17,17 @@ const delayInterval = 5 * time.Second
 
 type Worker struct {
 	wbClient    wb.Client
+	ozonClient  ozon.Client
 	ordersStore order.Store
 	queueStore  queue.Store
 }
 
-func NewWorker(wbClient wb.Client, ordersStore order.Store, queueStore queue.Store) Worker {
+func NewWorker(wbClient wb.Client, ozonClient ozon.Client, ordersStore order.Store, queueStore queue.Store) Worker {
 	return Worker{
 		wbClient:    wbClient,
 		ordersStore: ordersStore,
 		queueStore:  queueStore,
+		ozonClient:  ozonClient,
 	}
 }
 
@@ -34,18 +37,26 @@ func (w Worker) Run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		default:
-			ctxTimeout, cancel := context.WithTimeout(ctx, time.Second*30)
-			err := w.update(ctxTimeout)
-			cancel()
+			wbCtxTimeout, wbCancel := context.WithTimeout(ctx, time.Second*30)
+			err := w.updateWb(wbCtxTimeout)
+			wbCancel()
 			if err != nil {
-				log.Printf("supplies_updater:%s\n", err)
+				log.Printf("wb_supplies_updater:%s\n", err)
 			}
+
+			ozonCtxTimeout, ozonCancel := context.WithTimeout(ctx, time.Second*30)
+			ozonErr := w.updateOzon(ozonCtxTimeout)
+			ozonCancel()
+			if err != nil {
+				log.Printf("ozon_supplies_updater:%s\n", ozonErr)
+			}
+
 			time.Sleep(delayInterval)
 		}
 	}
 }
 
-func (w Worker) update(ctx context.Context) error {
+func (w Worker) updateWb(ctx context.Context) error {
 	next := 1
 	suppliesIDs := make([]string, 0)
 
@@ -88,5 +99,24 @@ func (w Worker) update(ctx context.Context) error {
 	}
 
 	err := w.queueStore.SetCompleteByOrderIDs(ctx, orderIDs)
+	return errors.Wrap(err, "queueStore.SetCompleteByOrderIDs")
+}
+
+func (w Worker) updateOzon(ctx context.Context) error {
+	resp, err := w.ozonClient.GetUnfulfilledList(ctx, ozon.StatusDelivering)
+	if err != nil {
+		return errors.Wrap(err, "ordersClient.GetUnfulfilledList")
+	}
+
+	if len(resp.Result.Postings) <= 0 {
+		return nil
+	}
+
+	orderIDs := make([]int64, 0, len(resp.Result.Postings))
+	for _, item := range resp.Result.Postings {
+		orderIDs = append(orderIDs, item.OrderID)
+	}
+
+	err = w.queueStore.SetCompleteByOrderIDs(ctx, orderIDs)
 	return errors.Wrap(err, "queueStore.SetCompleteByOrderIDs")
 }

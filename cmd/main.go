@@ -17,14 +17,17 @@ import (
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/order"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/queue"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/savepoint"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/service/ozon"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/wb"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/workers/orders_updater"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/service/workers/ozon_orders_updater"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/workers/queuer"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/workers/supplies_updater"
 )
 
 func main() {
 	cfg := config.GetAppConfig()
+	_ = os.Setenv("MARKETPLACE_APP_HOST", cfg.Host)
 
 	app := fiber.New(fiber.Config{
 		Prefork:       false,
@@ -44,6 +47,7 @@ func main() {
 	defer cancel()
 
 	wbClient := wb.NewClient(cfg.WbToken)
+	ozonClient := ozon.NewClient(cfg.OzonToken, cfg.OzonClientID)
 
 	dbpool, err := pgxpool.New(ctx, cfg.DatabaseURL)
 	if err != nil {
@@ -63,14 +67,20 @@ func main() {
 
 	ordersUpdater := orders_updater.NewWorker(wbClient, orderStore)
 	go ordersUpdater.Run(ctx)
-	queueUpdater := queuer.NewWorker(dbpool, orderStore, savepointsStore, queueStore, cardStore)
+
+	ozonOrdersUpdater := ozon_orders_updater.NewWorker(ozonClient, orderStore)
+	go ozonOrdersUpdater.Run(ctx)
+
+	queueUpdater := queuer.NewWorker(dbpool, orderStore, savepointsStore, cardStore)
 	go queueUpdater.Run(ctx)
-	suppliesUpdater := supplies_updater.NewWorker(wbClient, orderStore, queueStore)
+
+	suppliesUpdater := supplies_updater.NewWorker(wbClient, ozonClient, orderStore, queueStore)
 	go suppliesUpdater.Run(ctx)
 
-	appAPI := api.New(queueStore, cardStore, wbClient)
+	appAPI := api.New(queueStore, cardStore, wbClient, ozonClient)
 	app.Get("/api/list-queue", appAPI.ListQueue)
-	app.Get("/api/update-cards", appAPI.UpdateCards) //todo выпилить
+	app.Get("/api/update-wb-cards", appAPI.UpdateWBCards)     //todo выпилить
+	app.Get("/api/update-ozon-cards", appAPI.UpdateOzonCards) //todo выпилить
 	app.Post("/api/set-complete", appAPI.SetComplete)
 	app.Post("/api/set-printing", appAPI.SetPrinting)
 
