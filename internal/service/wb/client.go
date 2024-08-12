@@ -66,7 +66,7 @@ func (c Client) GetCardsList(ctx context.Context) (CardsListResponse, error) {
 	requestBody, err := json.Marshal(CardListRequest{
 		CardListSettings: CardListSettings{
 			CardListCursor: CardListCursor{
-				Limit: 1000,
+				Limit: 99,
 			},
 			Filter: Filter{
 				WithPhoto: 1,
