@@ -71,7 +71,7 @@ func (w Worker) updateWb(ctx context.Context) error {
 func (w Worker) updateOzon(ctx context.Context) error {
 	cardsResp, err := w.ozonClient.GetProductList(ctx)
 	if err != nil {
-		errors.Wrap(err, "ozonClient.GetProductList")
+		return errors.Wrap(err, "ozonClient.GetProductList")
 	}
 
 	productIDs := make([]int64, 0, len(cardsResp.Result.Items))
