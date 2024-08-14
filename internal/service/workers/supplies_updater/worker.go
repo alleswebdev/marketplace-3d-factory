@@ -1,14 +1,15 @@
+// Package supplies_updater закрывает собранные поставки
 package supplies_updater
 
 import (
 	"context"
 	"log"
+	"strconv"
 	"time"
 
+	"github.com/alleswebdev/marketplace-3d-factory/internal/db/order_queue"
 	"github.com/pkg/errors"
 
-	"github.com/alleswebdev/marketplace-3d-factory/internal/db/order"
-	"github.com/alleswebdev/marketplace-3d-factory/internal/db/queue"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/ozon"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/wb"
 )
@@ -16,18 +17,16 @@ import (
 const delayInterval = 5 * time.Second
 
 type Worker struct {
-	wbClient    wb.Client
-	ozonClient  ozon.Client
-	ordersStore order.Store
-	queueStore  queue.Store
+	wbClient         wb.Client
+	ozonClient       ozon.Client
+	ordersQueueStore order_queue.Store
 }
 
-func NewWorker(wbClient wb.Client, ozonClient ozon.Client, ordersStore order.Store, queueStore queue.Store) Worker {
+func NewWorker(wbClient wb.Client, ozonClient ozon.Client, ordersQueueStore order_queue.Store) Worker {
 	return Worker{
-		wbClient:    wbClient,
-		ordersStore: ordersStore,
-		queueStore:  queueStore,
-		ozonClient:  ozonClient,
+		wbClient:         wbClient,
+		ozonClient:       ozonClient,
+		ordersQueueStore: ordersQueueStore,
 	}
 }
 
@@ -57,7 +56,7 @@ func (w Worker) Run(ctx context.Context) {
 }
 
 func (w Worker) updateWb(ctx context.Context) error {
-	next := 1
+	next := 1 //todo запоминать итератор
 	suppliesIDs := make([]string, 0)
 
 	for {
@@ -83,7 +82,7 @@ func (w Worker) updateWb(ctx context.Context) error {
 		}
 	}
 
-	orderIDs := make([]int64, 0)
+	orderIDs := make([]string, 0)
 
 	for _, supplyID := range suppliesIDs {
 		//todo расспаралелить тут запросы, если вб не ограничивает лимиты на эту ручку
@@ -94,11 +93,11 @@ func (w Worker) updateWb(ctx context.Context) error {
 		}
 
 		for _, order := range resp.Orders {
-			orderIDs = append(orderIDs, order.ID)
+			orderIDs = append(orderIDs, strconv.Itoa(int(order.ID)))
 		}
 	}
 
-	err := w.queueStore.SetCompleteByOrderIDs(ctx, orderIDs)
+	err := w.ordersQueueStore.SetCompleteByOrderIDs(ctx, orderIDs)
 	return errors.Wrap(err, "queueStore.SetCompleteByOrderIDs")
 }
 
@@ -112,11 +111,11 @@ func (w Worker) updateOzon(ctx context.Context) error {
 		return nil
 	}
 
-	orderIDs := make([]int64, 0, len(resp.Result.Postings))
+	orderIDs := make([]string, 0, len(resp.Result.Postings))
 	for _, item := range resp.Result.Postings {
-		orderIDs = append(orderIDs, item.OrderID)
+		orderIDs = append(orderIDs, item.PostingNumber)
 	}
 
-	err = w.queueStore.SetCompleteByOrderIDs(ctx, orderIDs)
+	err = w.ordersQueueStore.SetCompleteByOrderIDs(ctx, orderIDs)
 	return errors.Wrap(err, "queueStore.SetCompleteByOrderIDs")
 }

@@ -46,7 +46,7 @@
               ></v-img>
             </v-card>
           </template>
-          <template v-slot:item.children="{ item }">
+          <template v-slot:item.composite_items="{ item }">
             <v-row no-gutters style="height: 40px;">
               <v-col>
                 <v-card-text>
@@ -55,24 +55,24 @@
               </v-col>
             </v-row>
 
-            <v-row v-for="childrenItem in item.children" no-gutters style="height: 40px;">
+            <v-row v-for="childrenItem in item.composite_items" no-gutters style="height: 40px;">
               <v-col>
                 <v-card-text>
-                  {{ childrenItem.article }}
+                  {{ childrenItem.name }}
                 </v-card-text>
               </v-col>
               <v-col>
-                <v-checkbox v-model="childrenItem.is_complete" @change="setIsComplete(childrenItem)"
+                <v-checkbox v-model="childrenItem.is_complete" @change="setChildrenCompleteV2(childrenItem)"
                             hide-details></v-checkbox>
               </v-col>
             </v-row>
 
           </template>
           <template v-slot:item.is_printing="{ item }">
-            <v-checkbox v-model="item.is_printing" @change="setIsPrinting(item)"></v-checkbox>
+            <v-checkbox v-model="item.is_printing" @change="setIsPrintingV2(item)"></v-checkbox>
           </template>
           <template v-slot:item.is_complete="{ item }">
-            <v-btn @click="setComplete(item)">{{ item.is_complete === true ? "Вернуть" : "Собрать" }}</v-btn>
+            <v-btn @click="setCompleteV2(item)">{{ item.is_complete === true ? "Вернуть" : "Собрать" }}</v-btn>
           </template>
         </v-data-table>
       </v-window-item>
@@ -105,7 +105,7 @@
               ></v-img>
             </v-card>
           </template>
-          <template v-slot:item.children="{ item }">
+          <template v-slot:item.composite_items="{ item }">
             <v-row no-gutters style="height: 40px;">
               <v-col>
                 <v-card-text>
@@ -114,24 +114,24 @@
               </v-col>
             </v-row>
 
-            <v-row v-for="childrenItem in item.children" no-gutters style="height: 40px;">
+            <v-row v-for="childrenItem in item.composite_items" no-gutters style="height: 40px;">
               <v-col>
                 <v-card-text>
-                  {{ childrenItem.article }}
+                  {{ childrenItem.name }}
                 </v-card-text>
               </v-col>
               <v-col>
-                <v-checkbox v-model="childrenItem.is_complete" @change="setIsComplete(childrenItem)"
+                <v-checkbox v-model="childrenItem.is_complete" @change="setChildrenCompleteV2(childrenItem)"
                             hide-details></v-checkbox>
               </v-col>
             </v-row>
 
           </template>
           <template v-slot:item.is_printing="{ item }">
-            <v-checkbox v-model="item.is_printing" @change="setIsPrinting(item)"></v-checkbox>
+            <v-checkbox v-model="item.is_printing" @change="setIsPrintingV2(item)"></v-checkbox>
           </template>
           <template v-slot:item.is_complete="{ item }">
-            <v-btn @click="setComplete(item)">{{ item.is_complete === true ? "Вернуть" : "Собрать" }}</v-btn>
+            <v-btn @click="setCompleteV2(item)">{{ item.is_complete === true ? "Вернуть" : "Собрать" }}</v-btn>
           </template>
         </v-data-table>
       </v-window-item>
@@ -166,7 +166,7 @@ export default {
         {title: ' 🖨️', key: 'is_printing', sortable: false},
         // { title: '№ заказа', key: 'order_id', sortable: false},
         // { title: 'Артикул', key: 'article' , sortable: false},
-        {title: 'Состав', key: 'children', sortable: false},
+        {title: 'Состав', key: 'composite_items', sortable: false},
         {title: 'Прошло времени', key: 'time_passed'},
         {title: 'Готов', key: 'is_complete', sortable: false}
       ],
@@ -175,7 +175,7 @@ export default {
         {title: 'Номер отправления', key: 'info.order_number', sortable: false},
         {title: ' 🖨️', key: 'is_printing', sortable: false, align: 'center',},
         {title: 'Отгрузка', key: 'shipment_date'},
-        {title: 'Состав', key: 'children', sortable: false},
+        {title: 'Состав', key: 'composite_items', sortable: false},
         {title: '', key: 'photo', sortable: false},
         {title: 'Количество', key: 'info.quantity', sortable: false},
       ],
@@ -214,9 +214,9 @@ export default {
       }
       this.isLoading = true
 
-      axios.get(`/api/list-queue?withParentComplete=${this.withCompleteParent}&withChildrenComplete=true&marketplace=wb`)
+      axios.get(`/api/v2/list-queue?withParentComplete=${this.withCompleteParent}&marketplace=wb`)
         .then(response => {
-          this.wbItems = response.data.items;
+          this.wbItems = response.data.items || [];
         })
         .catch(error => {
           console.error('Ошибка при получении данных:', error);
@@ -245,7 +245,7 @@ export default {
       }
       this.isLoading = true
 
-      axios.get(`/api/list-queue?withParentComplete=${this.withCompleteParent}&withChildrenComplete=true&marketplace=ozon`)
+      axios.get(`/api/v2/list-queue?withParentComplete=${this.withCompleteParent}&marketplace=ozon`)
         .then(response => {
           this.ozonItems = response.data.items || [];
           this.groupedOzonItems = []
@@ -260,8 +260,9 @@ export default {
 
       this.isLoading = false
     },
-    setIsComplete(item) {
-      axios.post('/api/set-complete', {id: item.id, state: item.is_complete})
+    // отдельные функции для кнопки собрать, потому что она не меняет стейт как чекбокс
+    setCompleteV2(item) {
+      axios.post('/api/v2/set-complete', {id: item.id, state: item.is_complete !== true})
         .then(response => {
           this.fetchItems()
         })
@@ -269,8 +270,8 @@ export default {
           console.error('Ошибка при обновлении флага:', error);
         });
     },
-    setComplete(item) {
-      axios.post('/api/set-complete', {id: item.id, state: item.is_complete !== true})
+    setIsCompleteV2(item) {
+      axios.post('/api/v2/set-complete', {id: item.id, state: item.is_complete})
         .then(response => {
           this.fetchItems()
         })
@@ -278,8 +279,18 @@ export default {
           console.error('Ошибка при обновлении флага:', error);
         });
     },
-    setIsPrinting(item) {
-      axios.post('/api/set-printing', {id: item.id, state: item.is_printing})
+    setChildrenCompleteV2(item) {
+      console.log(item)
+      axios.post('/api/v2/set-children-complete', {id: item.id, state: item.is_complete})
+        .then(response => {
+          this.fetchItems()
+        })
+        .catch(error => {
+          console.error('Ошибка при обновлении флага:', error);
+        });
+    },
+    setIsPrintingV2(item) {
+      axios.post('/api/v2/set-printing', {id: item.id, state: item.is_printing})
         .then(response => {
         })
         .catch(error => {

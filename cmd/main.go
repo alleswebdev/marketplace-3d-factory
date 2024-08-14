@@ -7,6 +7,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/alleswebdev/marketplace-3d-factory/internal/db/order_queue"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/service/workers/cards_updater"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -14,15 +16,11 @@ import (
 	"github.com/alleswebdev/marketplace-3d-factory/internal/api"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/config"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/card"
-	"github.com/alleswebdev/marketplace-3d-factory/internal/db/order"
-	"github.com/alleswebdev/marketplace-3d-factory/internal/db/queue"
-	"github.com/alleswebdev/marketplace-3d-factory/internal/db/savepoint"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/ozon"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/wb"
-	"github.com/alleswebdev/marketplace-3d-factory/internal/service/workers/orders_updater"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/workers/ozon_orders_updater"
-	"github.com/alleswebdev/marketplace-3d-factory/internal/service/workers/queuer"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/workers/supplies_updater"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/service/workers/wb_orders_updater"
 )
 
 func main() {
@@ -56,33 +54,30 @@ func main() {
 	}
 	defer dbpool.Close()
 
-	orderStore := order.New(dbpool)
 	cardStore := card.New(dbpool)
-	queueStore := queue.New(dbpool)
-	savepointsStore := savepoint.New(dbpool)
+	orderQueueStore := order_queue.New(dbpool)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	ordersUpdater := orders_updater.NewWorker(wbClient, orderStore)
+	ordersUpdater := wb_orders_updater.NewWorker(wbClient, orderQueueStore, cardStore)
 	go ordersUpdater.Run(ctx)
 
-	ozonOrdersUpdater := ozon_orders_updater.NewWorker(ozonClient, orderStore)
+	ozonOrdersUpdater := ozon_orders_updater.NewWorker(ozonClient, orderQueueStore, cardStore)
 	go ozonOrdersUpdater.Run(ctx)
 
-	queueUpdater := queuer.NewWorker(dbpool, orderStore, savepointsStore, cardStore)
-	go queueUpdater.Run(ctx)
-
-	suppliesUpdater := supplies_updater.NewWorker(wbClient, ozonClient, orderStore, queueStore)
+	suppliesUpdater := supplies_updater.NewWorker(wbClient, ozonClient, orderQueueStore)
 	go suppliesUpdater.Run(ctx)
 
-	appAPI := api.New(queueStore, cardStore, wbClient, ozonClient)
-	app.Get("/api/list-queue", appAPI.ListQueue)
-	app.Get("/api/update-wb-cards", appAPI.UpdateWBCards)     //todo выпилить
-	app.Get("/api/update-ozon-cards", appAPI.UpdateOzonCards) //todo выпилить
-	app.Post("/api/set-complete", appAPI.SetComplete)
-	app.Post("/api/set-printing", appAPI.SetPrinting)
+	cardsUpdater := cards_updater.NewWorker(wbClient, ozonClient, cardStore)
+	go cardsUpdater.Run(ctx)
+
+	appAPI := api.New(cardStore, wbClient, ozonClient, orderQueueStore)
+	app.Get("/api/v2/list-queue", appAPI.ListQueueV2)
+	app.Post("/api/v2/set-complete", appAPI.SetCompleteV2)
+	app.Post("/api/v2/set-children-complete", appAPI.SetChildrenCompleteV2)
+	app.Post("/api/v2/set-printing", appAPI.SetPrintingV2)
 
 	err = app.Listen(":" + strconv.Itoa(cfg.Port))
 	if err != nil {
