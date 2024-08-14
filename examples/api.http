@@ -23,3 +23,12 @@ Content-Type: application/json
 ### update cards
 GET {{host}}/api/update-cards
 Content-Type: application/json
+
+### set-children-complete
+POST {{host}}/api/v2/set-children-complete
+Content-Type: application/json
+
+{
+  "id": "013d5f35-62bc-4011-8819-4f53dbd27b23",
+  "state": true
+}

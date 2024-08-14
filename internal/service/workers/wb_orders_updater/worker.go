@@ -1,9 +1,10 @@
-package ozon_orders_updater
+package wb_orders_updater
 
 import (
 	"context"
 	"database/sql"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/order_queue"
@@ -11,13 +12,13 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/card"
-	"github.com/alleswebdev/marketplace-3d-factory/internal/service/ozon"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/service/wb"
 )
 
 const delayInterval = 10 * time.Second
 
 type OrdersClient interface {
-	GetUnfulfilledList(ctx context.Context, status string) (ozon.UnfulfilledListResponse, error)
+	GetNewOrders(ctx context.Context) (wb.OrdersResponse, error)
 }
 
 type Worker struct {
@@ -42,7 +43,7 @@ func (w Worker) Run(ctx context.Context) {
 		default:
 			err := w.update(ctx)
 			if err != nil {
-				log.Printf("ozon_orders_updater:%s\n", err)
+				log.Printf("orders_updater:%s\n", err)
 			}
 			time.Sleep(delayInterval)
 		}
@@ -50,20 +51,18 @@ func (w Worker) Run(ctx context.Context) {
 }
 
 func (w Worker) update(ctx context.Context) error {
-	resp, err := w.ordersClient.GetUnfulfilledList(ctx, ozon.StatusAwaitingDeliver)
+	resp, err := w.ordersClient.GetNewOrders(ctx)
 	if err != nil {
-		return errors.Wrap(err, "ordersClient.GetUnfulfilledList")
+		return errors.Wrap(err, "ordersClient.GetNewOrders")
 	}
 
-	if len(resp.Result.Postings) <= 0 {
+	if len(resp.Orders) <= 0 {
 		return nil
 	}
 
-	ordersArticles := make([]string, 0, len(resp.Result.Postings))
-	for _, item := range resp.Result.Postings {
-		for _, product := range item.Products {
-			ordersArticles = append(ordersArticles, product.OfferID)
-		}
+	ordersArticles := make([]string, 0, len(resp.Orders))
+	for _, order := range resp.Orders {
+		ordersArticles = append(ordersArticles, order.Article)
 	}
 
 	cards, err := w.cardsStore.GetByArticlesMap(ctx, ordersArticles)
@@ -71,38 +70,31 @@ func (w Worker) update(ctx context.Context) error {
 		return errors.Wrap(err, "cardsStore.GetByArticlesMap")
 	}
 
-	err = w.ordersStore.AddOrders(ctx, convertRespToOrders(resp, cards))
+	err = w.ordersStore.AddOrders(ctx, convertOrders(resp.Orders, cards))
 	if err != nil {
 		return errors.Wrap(err, "ordersStore.AddOrders")
 	}
 
-	//log.Println("ozon orders updated")
+	//log.Println("wb orders updated")
 
 	return nil
 }
 
-func convertRespToOrders(resp ozon.UnfulfilledListResponse, cards map[string]card.Card) []order_queue.Order {
-	postings := resp.Result.Postings
-	result := make([]order_queue.Order, 0, len(postings))
-	for _, item := range postings {
-		for _, product := range item.Products {
-			c, ok := cards[product.OfferID]
-			if !ok {
-				continue
-			}
-			result = append(result, order_queue.Order{
-				ID:             item.PostingNumber,
-				Article:        product.OfferID,
-				Marketplace:    card.MpOzon.String(),
-				Items:          makeItems(c),
-				OrderCreatedAt: sql.NullTime{Time: item.InProcessAt, Valid: true},
-				Info: order_queue.Info{
-					OrderNumber:     item.PostingNumber,
-					OrderShipmentAt: item.ShipmentDate,
-					Quantity:        int32(product.Quantity),
-				},
-			})
+func convertOrders(wbOrders []wb.Order, cards map[string]card.Card) []order_queue.Order {
+	result := make([]order_queue.Order, 0, len(wbOrders))
+	for _, item := range wbOrders {
+		c, ok := cards[item.Article]
+		if !ok {
+			continue
 		}
+
+		result = append(result, order_queue.Order{
+			ID:             strconv.Itoa(int(item.ID)),
+			Article:        item.Article,
+			Items:          makeItems(c),
+			Marketplace:    card.MpWb.String(),
+			OrderCreatedAt: sql.NullTime{Time: item.CreatedAt},
+		})
 	}
 
 	return result
