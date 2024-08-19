@@ -50,9 +50,9 @@ jobs:
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
-          scp -i ~/.ssh/rsa_id .env $VPS_USER@$VPS_IP:/www/factory-deploy/
-          scp -i ~/.ssh/rsa_id docker-compose.yaml $VPS_USER@$VPS_IP:/www/factory-deploy/
-          scp -i ~/.ssh/rsa_id config/values.yaml $VPS_USER@$VPS_IP:/www/factory-deploy/config/values.yaml
-          ssh -i ~/.ssh/rsa_id $VPS_USER@$VPS_IP "docker compose -f /www/factory-deploy/docker-compose.yaml pull"
-          ssh -i ~/.ssh/rsa_id $VPS_USER@$VPS_IP "docker compose --env-file /www/factory-deploy/.env -f /www/factory-deploy/docker-compose.yaml run --rm migrations"
-          ssh -i ~/.ssh/rsa_id $VPS_USER@$VPS_IP "docker compose --env-file /www/factory-deploy/.env -f /www/factory-deploy/docker-compose.yaml up -d --build"
+          scp -i /home/runner/.ssh/rsa_id .env $VPS_USER@$VPS_IP:/www/factory-deploy/
+          scp -i /home/runner/.ssh/rsa_id docker-compose.yaml $VPS_USER@$VPS_IP:/www/factory-deploy/
+          scp -i /home/runner/.ssh/rsa_id config/values.yaml $VPS_USER@$VPS_IP:/www/factory-deploy/config/values.yaml
+          ssh -i /home/runner/.ssh/rsa_id $VPS_USER@$VPS_IP "docker compose -f /www/factory-deploy/docker-compose.yaml pull"
+          ssh -i /home/runner/.ssh/rsa_id $VPS_USER@$VPS_IP "docker compose --env-file /www/factory-deploy/.env -f /www/factory-deploy/docker-compose.yaml run --rm migrations"
+          ssh -i /home/runner/.ssh/rsa_id $VPS_USER@$VPS_IP "docker compose --env-file /www/factory-deploy/.env -f /www/factory-deploy/docker-compose.yaml up -d --build"
