@@ -50,9 +50,9 @@ jobs:
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
-          scp -o StrictHostKeyChecking=no .env $VPS_USER@$VPS_IP:/www/factory-deploy/
-          scp -o StrictHostKeyChecking=no docker-compose.yaml $VPS_USER@$VPS_IP:/www/factory-deploy/
-          scp -o StrictHostKeyChecking=no config/values.yaml $VPS_USER@$VPS_IP:/www/factory-deploy/config/values.yaml
-          ssh -o StrictHostKeyChecking=no $VPS_USER@$VPS_IP "docker compose -f /www/factory-deploy/docker-compose.yaml pull"
-          ssh -o StrictHostKeyChecking=no $VPS_USER@$VPS_IP "docker compose --env-file /www/factory-deploy/.env -f /www/factory-deploy/docker-compose.yaml run --rm migrations"
-          ssh -o StrictHostKeyChecking=no $VPS_USER@$VPS_IP "docker compose --env-file /www/factory-deploy/.env -f /www/factory-deploy/docker-compose.yaml up -d --build"
+          scp -i ~/.ssh/rsa_id .env $VPS_USER@$VPS_IP:/www/factory-deploy/
+          scp -i ~/.ssh/rsa_id docker-compose.yaml $VPS_USER@$VPS_IP:/www/factory-deploy/
+          scp -i ~/.ssh/rsa_id config/values.yaml $VPS_USER@$VPS_IP:/www/factory-deploy/config/values.yaml
+          ssh -i ~/.ssh/rsa_id $VPS_USER@$VPS_IP "docker compose -f /www/factory-deploy/docker-compose.yaml pull"
+          ssh -i ~/.ssh/rsa_id $VPS_USER@$VPS_IP "docker compose --env-file /www/factory-deploy/.env -f /www/factory-deploy/docker-compose.yaml run --rm migrations"
+          ssh -i ~/.ssh/rsa_id $VPS_USER@$VPS_IP "docker compose --env-file /www/factory-deploy/.env -f /www/factory-deploy/docker-compose.yaml up -d --build"
