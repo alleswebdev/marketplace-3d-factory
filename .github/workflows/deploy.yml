@@ -25,7 +25,7 @@ jobs:
 
       - name: Build and Push Docker image
         run: |
-          docker-compose -f /deploy/docker-compose.yaml build
+          docker compose -f /deploy/docker-compose.yaml build
           docker tag 3d-factory:latest ${{ secrets.DOCKER_USERNAME }}/3d-factory:latest
           docker push ${{ secrets.DOCKER_USERNAME }}/3d-factory:latest
 
@@ -41,8 +41,8 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           scp -o StrictHostKeyChecking=no .env $VPS_USER@$VPS_IP:/www/factory-deploy/
-          scp -o StrictHostKeyChecking=no docker-compose.yml $VPS_USER@$VPS_IP:/www/factory-deploy/
+          scp -o StrictHostKeyChecking=no docker-compose.yaml $VPS_USER@$VPS_IP:/www/factory-deploy/
           scp -o StrictHostKeyChecking=no config/values.yaml $VPS_USER@$VPS_IP:/www/factory-deploy/config/values.yaml
-          ssh -o StrictHostKeyChecking=no $VPS_USER@$VPS_IP "docker-compose -f /www/factory-deploy/docker-compose.yml pull"
-          ssh -o StrictHostKeyChecking=no $VPS_USER@$VPS_IP "docker-compose --env-file /www/factory-deploy/.env -f /www/factory-deploy/docker-compose.yml run --rm migrations"
-          ssh -o StrictHostKeyChecking=no $VPS_USER@$VPS_IP "docker-compose --env-file /www/factory-deploy/.env -f /www/factory-deploy/docker-compose.yml up -d --build"
+          ssh -o StrictHostKeyChecking=no $VPS_USER@$VPS_IP "docker compose -f /www/factory-deploy/docker-compose.yaml pull"
+          ssh -o StrictHostKeyChecking=no $VPS_USER@$VPS_IP "docker compose --env-file /www/factory-deploy/.env -f /www/factory-deploy/docker-compose.yaml run --rm migrations"
+          ssh -o StrictHostKeyChecking=no $VPS_USER@$VPS_IP "docker compose --env-file /www/factory-deploy/.env -f /www/factory-deploy/docker-compose.yaml up -d --build"
