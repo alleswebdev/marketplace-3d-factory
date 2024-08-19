@@ -48,6 +48,7 @@ jobs:
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
           scp -o StrictHostKeyChecking=no .env $VPS_USER@$VPS_IP:/www/factory-deploy/
           scp -o StrictHostKeyChecking=no docker-compose.yaml $VPS_USER@$VPS_IP:/www/factory-deploy/
