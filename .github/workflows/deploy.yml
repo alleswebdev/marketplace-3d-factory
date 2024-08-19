@@ -39,6 +39,7 @@ jobs:
           chmod 600 /home/runner/.ssh/rsa_id
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null	
           ssh-add /home/runner/.ssh/rsa_id
+          echo -e "Host *\n  HostkeyAlgorithms +ssh-rsa\n  PubkeyAcceptedKeyTypes +ssh-rsa" >> ~/.ssh/config
 
       - name: Deploy to VPS
         env:
