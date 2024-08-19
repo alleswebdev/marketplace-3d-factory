@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  3d-factory:
+    image: 3d-factory:latest
+    build:
+      context: ..
+      dockerfile: ./deploy/Dockerfile
+    ports:
+      - "8081:80"
+    restart: always
+    command: sh -c "./3dfactory > /var/log/app.log 2>&1"
+    volumes:
+      - ../configs/values.yaml:/app/configs/values.yaml
+      - ./logs:/var/log
+    environment:
+      - PG_HOST=${PG_HOST}
+      - PG_PORT=${PG_PORT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "2"
+  migrations:
+    image: 3d-factory:latest
+    build:
+      context: ..
+      dockerfile: ./deploy/Dockerfile
+    entrypoint: ["goose", "-dir", "../migrations", "postgres", "user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} host=${PG_HOST} port=${PG_PORT} database=${POSTGRES_DB} sslmode=disable", "up"]
