@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   3d-factory:
-    image: 3d-factory:latest
+    image: alleswebdev/3d-factory:latest
     build:
       context: ..
       dockerfile: ./deploy/Dockerfile
@@ -25,7 +25,7 @@ services:
         max-size: "1m"
         max-file: "2"
   migrations:
-    image: 3d-factory:latest
+    image: alleswebdev/3d-factory:latest
     build:
       context: ..
       dockerfile: ./deploy/Dockerfile
