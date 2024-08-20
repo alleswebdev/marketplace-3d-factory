@@ -26,7 +26,7 @@ jobs:
       - name: Build and Push Docker image
         run: |
           docker compose -f deploy/docker-compose.yaml build
-          docker tag 3d-factory:latest ${{ secrets.DOCKER_USERNAME }}/3d-factory:latest
+          docker tag ${{ secrets.DOCKER_USERNAME }}/3d-factory:latest
           docker push ${{ secrets.DOCKER_USERNAME }}/3d-factory:latest
 
       - name: Configure SSH
