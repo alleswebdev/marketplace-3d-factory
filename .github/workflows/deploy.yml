@@ -67,7 +67,7 @@ jobs:
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
         run: |
           scp  .env prod:/home/deployer/www/factory-deploy/
-          scp  /deploy/docker-compose.yaml prod:/home/deployer/www/factory-deploy/
+          scp  deploy/docker-compose.yaml prod:/home/deployer/www/factory-deploy/
           ssh  prod "docker compose -f /home/deployer/www/factory-deploy/docker-compose.yaml pull"
           ssh  prod "docker compose --env-file /home/deployer/www/factory-deploy/.env -f /home/deployer/www/factory-deploy/docker-compose.yaml run --rm migrations"
           ssh  prod "docker compose --env-file /home/deployer/www/factory-deploy/.env -f /home/deployer/www/factory-deploy/docker-compose.yaml up -d --build"
