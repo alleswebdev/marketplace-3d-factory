@@ -35,10 +35,10 @@ jobs:
         run: |
           mkdir -p /home/runner/.ssh
           ssh-keyscan ${{ secrets.VPS_IP }} >> /home/runner/.ssh/known_hosts
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > /home/runner/.ssh/rsa_id
-          chmod 600 /home/runner/.ssh/rsa_id
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > /home/runner/.ssh/id_ed25519
+          chmod 600 /home/runner/.ssh/id_ed25519
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null	
-          ssh-add /home/runner/.ssh/rsa_id
+          ssh-add /home/runner/.ssh/id_ed25519
           echo -e "Host *\n  HostkeyAlgorithms +ssh-rsa\n  PubkeyAcceptedKeyTypes +ssh-rsa" >> ~/.ssh/config
 
       - name: Deploy to VPS
@@ -51,9 +51,9 @@ jobs:
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
-          scp -i /home/runner/.ssh/rsa_id .env $VPS_USER@$VPS_IP:/www/factory-deploy/
-          scp -i /home/runner/.ssh/rsa_id docker-compose.yaml $VPS_USER@$VPS_IP:/www/factory-deploy/
-          scp -i /home/runner/.ssh/rsa_id config/values.yaml $VPS_USER@$VPS_IP:/www/factory-deploy/config/values.yaml
-          ssh -i /home/runner/.ssh/rsa_id $VPS_USER@$VPS_IP "docker compose -f /www/factory-deploy/docker-compose.yaml pull"
-          ssh -i /home/runner/.ssh/rsa_id $VPS_USER@$VPS_IP "docker compose --env-file /www/factory-deploy/.env -f /www/factory-deploy/docker-compose.yaml run --rm migrations"
-          ssh -i /home/runner/.ssh/rsa_id $VPS_USER@$VPS_IP "docker compose --env-file /www/factory-deploy/.env -f /www/factory-deploy/docker-compose.yaml up -d --build"
+          scp -i /home/runner/.ssh/id_ed25519 .env $VPS_USER@$VPS_IP:/www/factory-deploy/
+          scp -i /home/runner/.ssh/id_ed25519 docker-compose.yaml $VPS_USER@$VPS_IP:/www/factory-deploy/
+          scp -i /home/runner/.ssh/id_ed25519 config/values.yaml $VPS_USER@$VPS_IP:/www/factory-deploy/config/values.yaml
+          ssh -i /home/runner/.ssh/id_ed25519 $VPS_USER@$VPS_IP "docker compose -f /www/factory-deploy/docker-compose.yaml pull"
+          ssh -i /home/runner/.ssh/id_ed25519 $VPS_USER@$VPS_IP "docker compose --env-file /www/factory-deploy/.env -f /www/factory-deploy/docker-compose.yaml run --rm migrations"
+          ssh -i /home/runner/.ssh/id_ed25519 $VPS_USER@$VPS_IP "docker compose --env-file /www/factory-deploy/.env -f /www/factory-deploy/docker-compose.yaml up -d --build"
