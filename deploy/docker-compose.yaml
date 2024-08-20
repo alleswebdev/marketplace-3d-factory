@@ -29,4 +29,4 @@ services:
     build:
       context: ..
       dockerfile: ./deploy/Dockerfile
-    entrypoint: ["goose", "-dir", "../migrations", "postgres", "user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} host=${PG_HOST} port=${PG_PORT} database=${POSTGRES_DB} sslmode=disable", "up"]
+    entrypoint: ["goose", "-dir", "../migrations", "postgres", "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/{POSTGRES_DB}", "up"]
