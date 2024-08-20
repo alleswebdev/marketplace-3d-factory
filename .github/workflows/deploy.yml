@@ -35,6 +35,7 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan ${{ secrets.VPS_IP }} >> ~/.ssh/known_hosts
+          eval "$(ssh-agent -s)"
           ssh-add ~/.ssh/id_ed25519
           echo -e "Host *\n  HostKeyAlgorithms +ssh-rsa,ssh-ed25519\n  PubkeyAcceptedKeyTypes +ssh-rsa,ssh-ed25519" >> ~/.ssh/config
 
@@ -53,7 +54,6 @@ jobs:
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
           ssh -o "HostKeyAlgorithms=+ssh-rsa,ssh-ed25519" -i /home/runner/.ssh/id_ed25519 $VPS_USER@$VPS_IP "ls -lsa"
           scp -o "HostKeyAlgorithms=+ssh-rsa,ssh-ed25519" -i /home/runner/.ssh/id_ed25519 .env $VPS_USER@$VPS_IP:/www/factory-deploy/
