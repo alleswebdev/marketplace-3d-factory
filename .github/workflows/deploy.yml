@@ -50,7 +50,8 @@ jobs:
           ssh-add -l
           echo "Testing SSH connection:"
           ssh -o "IdentitiesOnly=yes" -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} "echo 'Connected successfully'"
-      
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh-agent.sock
 
       - name: Deploy to VPS
         env:
