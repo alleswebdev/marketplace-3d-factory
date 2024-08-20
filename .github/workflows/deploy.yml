@@ -29,29 +29,23 @@ jobs:
           docker tag 3d-factory:latest ${{ secrets.DOCKER_USERNAME }}/3d-factory:latest
           docker push ${{ secrets.DOCKER_USERNAME }}/3d-factory:latest
 
-      - name: Setup SSH
+      - name: Configure SSH
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan ${{ secrets.VPS_IP }} >> ~/.ssh/known_hosts
-
-      - name: Start SSH agent and add key
-        run: |
-          eval $(ssh-agent -s)
-          ssh-add ~/.ssh/id_ed25519
-          echo -e "Host *\n  HostKeyAlgorithms +ssh-rsa,ssh-ed25519\n  PubkeyAcceptedKeyTypes +ssh-rsa,ssh-ed25519" >> ~/.ssh/config
+          mkdir -p ~/.ssh/
+          echo "$SSH_KEY" > ~/.ssh/prod.key
+          chmod 600 ~/.ssh/prod.key
+          cat >>~/.ssh/config <<END
+          Host staging
+            HostName $SSH_HOST
+            User $SSH_USER
+            IdentityFile ~/.ssh/prod.key
+            StrictHostKeyChecking no
+          END
         env:
-          SSH_AUTH_SOCK: /tmp/ssh-agent.sock
+          SSH_USER: ${{ secrets.VPS_USER }}
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.VPS_IP }}
 
-      - name: Check SSH key
-        run: |
-          echo "Checking if key is loaded:"
-          ssh-add -l
-          echo "Testing SSH connection:"
-          ssh -o "IdentitiesOnly=yes" -i ~/.ssh/id_ed25519 ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} "echo 'Connected successfully'"
-        env:
-          SSH_AUTH_SOCK: /tmp/ssh-agent.sock
 
       - name: Deploy to VPS
         env:
@@ -61,12 +55,11 @@ jobs:
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
-          ssh -o "HostKeyAlgorithms=+ssh-rsa,ssh-ed25519" -i /home/runner/.ssh/id_ed25519 $VPS_USER@$VPS_IP "ls -lsa"
-          scp -o "HostKeyAlgorithms=+ssh-rsa,ssh-ed25519" -i /home/runner/.ssh/id_ed25519 .env $VPS_USER@$VPS_IP:/www/factory-deploy/
-          scp -o "HostKeyAlgorithms=+ssh-rsa,ssh-ed25519" -i /home/runner/.ssh/id_ed25519 docker-compose.yaml $VPS_USER@$VPS_IP:/www/factory-deploy/
-          scp -o "HostKeyAlgorithms=+ssh-rsa,ssh-ed25519" -i /home/runner/.ssh/id_ed25519 config/values.yaml $VPS_USER@$VPS_IP:/www/factory-deploy/config/values.yaml
-          ssh -o "HostKeyAlgorithms=+ssh-rsa,ssh-ed25519" -i /home/runner/.ssh/id_ed25519 $VPS_USER@$VPS_IP "docker compose -f /www/factory-deploy/docker-compose.yaml pull"
-          ssh -o "HostKeyAlgorithms=+ssh-rsa,ssh-ed25519" -i /home/runner/.ssh/id_ed25519 $VPS_USER@$VPS_IP "docker compose --env-file /www/factory-deploy/.env -f /www/factory-deploy/docker-compose.yaml run --rm migrations"
-          ssh -o "HostKeyAlgorithms=+ssh-rsa,ssh-ed25519" -i /home/runner/.ssh/id_ed25519 $VPS_USER@$VPS_IP "docker compose --env-file /www/factory-deploy/.env -f /www/factory-deploy/docker-compose.yaml up -d --build"
+          ssh  prod "ls -lsa"
+          scp  .env prod:/www/factory-deploy/
+          scp  docker-compose.yaml prod:/www/factory-deploy/
+          scp  config/values.yaml prod:/www/factory-deploy/config/values.yaml
+          ssh  prod "docker compose -f /www/factory-deploy/docker-compose.yaml pull"
+          ssh  prod "docker compose --env-file /www/factory-deploy/.env -f /www/factory-deploy/docker-compose.yaml run --rm migrations"
+          ssh  prod "docker compose --env-file /www/factory-deploy/.env -f /www/factory-deploy/docker-compose.yaml up -d --build"
