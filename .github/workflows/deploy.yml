@@ -43,6 +43,9 @@ jobs:
             StrictHostKeyChecking no
             HostKeyAlgorithms +ssh-rsa,ssh-ed25519
             PubkeyAcceptedKeyTypes +ssh-rsa,ssh-ed25519
+            ControlMaster auto
+            ControlPath ~/.ssh/control-%C
+            ControlPersist 5m
           END
         env:
           SSH_USER: ${{ secrets.VPS_USER }}
