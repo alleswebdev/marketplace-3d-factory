@@ -61,6 +61,6 @@ jobs:
             -v /home/deployer/www/factory-deploy/configs/values.yaml:/app/configs/values.yaml \
             -v /home/deployer/www/factory-deploy/logs/app.log:/app/logs/app.log \
             -v /home/deployer/www/factory-deploy/web:/app/web \
-            ${{ secrets.DOCKER_USERNAME }}/3d-factory:latest \
-            > /home/deployer/www/factory-deploy/logs/app.log 2>&1"
+           --log-driver json-file --log-opt path=/home/deployer/www/factory-deploy/logs/app.log \
+            ${{ secrets.DOCKER_USERNAME }}/3d-factory:latest"
           
