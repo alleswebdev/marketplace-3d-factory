@@ -21,7 +21,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker image
-        run: docker build -t 3d-factory .
+        run: docker build -f /deploy/Dockerfile -t 3d-factory .
 
       - name: Push Docker image
         run: docker tag 3d-factory:latest ${{ secrets.DOCKER_USERNAME }}/3d-factory:latest && docker push ${{ secrets.DOCKER_USERNAME }}/3d-factory:latest
@@ -58,4 +58,4 @@ jobs:
           ssh prod  "docker pull ${{ secrets.DOCKER_USERNAME }}/3d-factory:latest"
           ssh prod  "docker stop 3d-factory-container || true"
           ssh prod  "docker rm 3d-factory-container || true"
-          ssh prod  "docker run -d -p 8080:80 --name 3d-factory-container ${{ secrets.DOCKER_USERNAME }}/3d-factory:latest"
+          ssh prod  "docker run -d -p 8080:80 --name 3d-factory-container -v /home/deployer/www/factory-deploy/configs/values.yaml:/app/configs/values.yaml ${{ secrets.DOCKER_USERNAME }}/3d-factory:latest"
