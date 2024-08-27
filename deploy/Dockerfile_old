@@ -7,10 +7,15 @@ RUN go mod download && go mod verify
 
 COPY .. .
 RUN go build -ldflags "-X main.version=1.0.0 -X main.buildTime=$(date -u '+%Y-%m-%d_%H:%M:%S')" -o 3dfactory ./cmd
+RUN go install github.com/pressly/goose/v3/cmd/goose@latest
 
 FROM alpine:latest
 WORKDIR /app
 COPY --from=build /app/3dfactory .
+COPY --from=build /go/bin/goose /usr/local/bin/goose
+RUN mkdir /migrations
+COPY ../migrations /migrations
+
 
 EXPOSE 80
 CMD ["./3dfactory"]
