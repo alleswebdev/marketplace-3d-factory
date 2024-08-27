@@ -58,6 +58,7 @@ jobs:
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
         run: |
           scp  3dfactory prod:/home/deployer/www/factory-deploy/
+          ssh  prod "cd /home/deployer/www/factory-deploy/"
           ssh  prod "make stop"
           ssh  prod "make goose-up"
           ssh  prod "make start"
