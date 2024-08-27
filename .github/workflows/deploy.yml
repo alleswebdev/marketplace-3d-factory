@@ -57,4 +57,10 @@ jobs:
           ssh prod  "docker stop 3d-factory-container || true"
           ssh prod  "docker rm 3d-factory-container || true"
           ssh prod  "mkdir /home/deployer/www/factory-deploy/logs || true"
-          ssh prod  "docker run -d -p 8080:81 --name 3d-factory-container -v /home/deployer/www/factory-deploy/configs/values.yaml:/app/configs/values.yaml ${{ secrets.DOCKER_USERNAME }}/3d-factory:latest >> /home/deployer/www/factory-deploy/logs/app.log 2>&1 "
+          ssh prod  "docker run -d -p 8080:81 --name 3d-factory-container \
+            -v /home/deployer/www/factory-deploy/configs/values.yaml:/app/configs/values.yaml \
+            -v /home/deployer/www/factory-deploy/logs/app.log:/app/logs/app.log \
+            -v /home/deployer/www/factory-deploy/web:/app/web \
+            ${{ secrets.DOCKER_USERNAME }}/3d-factory:latest \
+            > /home/deployer/www/factory-deploy/logs/app.log 2>&1"
+          
