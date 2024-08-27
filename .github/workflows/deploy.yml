@@ -53,7 +53,7 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_IP: ${{ secrets.VPS_IP }}
         run: |
-          scp  migrations prod:/home/deployer/www/factory-deploy/migrations
+          scp  -r migrations prod:/home/deployer/www/factory-deploy/migrations
           ssh prod  "cd /home/deployer/www/factory-deploy/ && make goose-up"
           ssh prod  "docker pull ${{ secrets.DOCKER_USERNAME }}/3d-factory:latest"
           ssh prod  "docker stop 3d-factory-container || true"
