@@ -55,10 +55,6 @@ jobs:
             HostName $SSH_HOST
             User $SSH_USER
             IdentityFile ~/.ssh/prod.key
-            IdentitiesOnly=yes
-            StrictHostKeyChecking no
-            HostKeyAlgorithms +ssh-rsa,ssh-ed25519
-            PubkeyAcceptedKeyTypes +ssh-rsa,ssh-ed25519
           END
         env:
           SSH_USER: ${{ secrets.VPS_USER }}
