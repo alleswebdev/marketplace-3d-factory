@@ -1,0 +1,70 @@
+name: Build and Deploy Vue App
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        working-directory: ./web/factory-front
+        run: |
+          npm install
+
+      - name: Build project
+        working-directory: ./web/factory-front
+        run: |
+          npm run build
+
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: vue-app
+          path: web/factory-front/dist
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download production artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: vue-app
+          path: ./dist
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$SSH_KEY" > ~/.ssh/prod.key
+          chmod 600 ~/.ssh/prod.key
+          cat >>~/.ssh/config <<END
+          Host prod
+            HostName $SSH_HOST
+            User $SSH_USER
+            IdentityFile ~/.ssh/prod.key
+            IdentitiesOnly=yes
+            StrictHostKeyChecking no
+            HostKeyAlgorithms +ssh-rsa,ssh-ed25519
+            PubkeyAcceptedKeyTypes +ssh-rsa,ssh-ed25519
+          END
+        env:
+          SSH_USER: ${{ secrets.VPS_USER }}
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.VPS_IP }}
+
+      - name: Deploy to server
+        run: |
+          scp  -r ./dist prod:/home/deployer/www/factory-deploy/web/factory-front/dist

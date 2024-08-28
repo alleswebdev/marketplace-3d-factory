@@ -2,3 +2,4 @@
 configs/values.yaml
 3dfactory
 cover.out
+deploy/logs/*

@@ -1,0 +1,66 @@
+name: Deploy prod
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  deploy_go:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Docker image
+        run: docker build -f deploy/Dockerfile -t 3d-factory .
+
+      - name: Push Docker image
+        run: docker tag 3d-factory:latest ${{ secrets.DOCKER_USERNAME }}/3d-factory:latest && docker push ${{ secrets.DOCKER_USERNAME }}/3d-factory:latest
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$SSH_KEY" > ~/.ssh/prod.key
+          chmod 600 ~/.ssh/prod.key
+          cat >>~/.ssh/config <<END
+          Host prod
+            HostName $SSH_HOST
+            User $SSH_USER
+            IdentityFile ~/.ssh/prod.key
+            IdentitiesOnly=yes
+            StrictHostKeyChecking no
+            HostKeyAlgorithms +ssh-rsa,ssh-ed25519
+            PubkeyAcceptedKeyTypes +ssh-rsa,ssh-ed25519
+          END
+        env:
+          SSH_USER: ${{ secrets.VPS_USER }}
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.VPS_IP }}
+
+      - name: migrate db
+        run: |
+          scp  -r migrations prod:/home/deployer/www/factory-deploy/migrations
+          ssh prod  "cd /home/deployer/www/factory-deploy/ && make goose-up"
+
+      - name: Deploy to VPS
+        run: |
+          ssh prod  "docker pull ${{ secrets.DOCKER_USERNAME }}/3d-factory:latest"
+          ssh prod  "docker stop 3d-factory-container || true"
+          ssh prod  "docker rm 3d-factory-container || true"
+          ssh prod  "mkdir /home/deployer/www/factory-deploy/logs || true"
+          ssh prod  "docker run -d -p 80:80 --name 3d-factory-container \
+            --network www_default \
+            -v /home/deployer/www/factory-deploy/configs/values.yaml:/app/configs/values.yaml \
+            -v /home/deployer/www/factory-deploy/web:/app/web \
+            ${{ secrets.DOCKER_USERNAME }}/3d-factory:latest"
+          ssh prod  "docker logs -f 3d-factory-container > /home/deployer/www/factory-deploy/logs/app.log 2>&1 &"
+          
