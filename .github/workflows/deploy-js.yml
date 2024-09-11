@@ -67,4 +67,4 @@ jobs:
 
       - name: Deploy to server
         run: |
-          scp  -r ./dist prod:/home/deployer/www/factory-deploy/web/factory-front/dist
+          scp  -r ./dist prod:/home/deployer/www/factory-deploy/web/factory-front
