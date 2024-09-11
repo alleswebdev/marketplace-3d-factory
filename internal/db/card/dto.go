@@ -43,8 +43,9 @@ const (
 	SizeXL       Size = "XL"
 	SizeStandart Size = "standart"
 
-	MpWb   Marketplace = "wb"
-	MpOzon Marketplace = "ozon"
+	MpWb     Marketplace = "wb"
+	MpOzon   Marketplace = "ozon"
+	MpYandex Marketplace = "yandex"
 )
 
 func (m Marketplace) String() string {
