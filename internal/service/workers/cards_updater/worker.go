@@ -5,27 +5,32 @@ import (
 	"log"
 	"time"
 
-	"github.com/alleswebdev/marketplace-3d-factory/internal/db/card"
 	"github.com/google/uuid"
+
+	"github.com/alleswebdev/marketplace-3d-factory/internal/db/card"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/service/yandex"
+
 	"github.com/pkg/errors"
 
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/ozon"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/wb"
 )
 
-const delayInterval = 5 * time.Minute
+const delayInterval = 5 * time.Second
 
 type Worker struct {
-	wbClient   wb.Client
-	ozonClient ozon.Client
-	cardStore  card.Store
+	wbClient     wb.Client
+	ozonClient   ozon.Client
+	yandexClient yandex.Client
+	cardStore    card.Store
 }
 
-func NewWorker(wbClient wb.Client, ozonClient ozon.Client, cardStore card.Store) Worker {
+func NewWorker(wbClient wb.Client, ozonClient ozon.Client, yandexClient yandex.Client, cardStore card.Store) Worker {
 	return Worker{
-		wbClient:   wbClient,
-		ozonClient: ozonClient,
-		cardStore:  cardStore,
+		wbClient:     wbClient,
+		ozonClient:   ozonClient,
+		cardStore:    cardStore,
+		yandexClient: yandexClient,
 	}
 }
 
@@ -47,6 +52,13 @@ func (w Worker) Run(ctx context.Context) {
 			ozonCancel()
 			if err != nil {
 				log.Printf("ozon_cards_updater:%s\n", ozonErr)
+			}
+
+			yandexCtxTimeout, yandexCancel := context.WithTimeout(ctx, time.Second*30)
+			yandexErr := w.updateYandex(yandexCtxTimeout)
+			yandexCancel()
+			if err != nil {
+				log.Printf("yandex_cards_updater:%s\n", yandexErr)
 			}
 
 			time.Sleep(delayInterval)
@@ -88,20 +100,27 @@ func (w Worker) updateOzon(ctx context.Context) error {
 	return errors.Wrap(err, "cardStore.AddCards")
 }
 
-func convertProductResponseToCards(productsResponse ozon.ProductListInfoResponse) []card.Card {
-	result := make([]card.Card, 0, len(productsResponse.Result.Items))
-	for _, item := range productsResponse.Result.Items {
-		convertItem := card.Card{
-			ID:          uuid.New(),
-			Name:        item.Name,
-			Article:     item.OfferID,
-			Marketplace: card.MpOzon,
-			IsComposite: false,
-			Photo:       item.PrimaryImage,
-		}
-
-		result = append(result, convertItem)
+func (w Worker) updateYandex(ctx context.Context) error {
+	productsResp, err := w.yandexClient.GetProductList(ctx)
+	if err != nil {
+		return errors.Wrap(err, "yandexClient.GetProductList")
 	}
 
-	return result
+	cards := make([]card.Card, 0, len(productsResp.Result.OfferMappings))
+	for _, offerMappings := range productsResp.Result.OfferMappings {
+		var photo string
+		if len(offerMappings.Offer.Pictures) > 0 {
+			photo = offerMappings.Offer.Pictures[0]
+		}
+		cards = append(cards, card.Card{
+			ID:          uuid.New(),
+			Name:        offerMappings.Offer.Name,
+			Article:     offerMappings.Offer.OfferId,
+			Marketplace: card.MpYandex,
+			Photo:       photo,
+		})
+	}
+
+	err = w.cardStore.AddCards(ctx, cards)
+	return errors.Wrap(err, "cardStore.AddCards")
 }
