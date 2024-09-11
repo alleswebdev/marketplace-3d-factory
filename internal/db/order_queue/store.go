@@ -7,10 +7,11 @@ import (
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/alleswebdev/marketplace-3d-factory/internal/db/card"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pkg/errors"
+
+	"github.com/alleswebdev/marketplace-3d-factory/internal/db/card"
 )
 
 const (
@@ -67,7 +68,7 @@ func (s *Store) GetOrders(ctx context.Context, filter ListFilter) ([]Order, erro
 		Where(sq.Eq{isCompleteColumn: filter.WithParentComplete}).
 		PlaceholderFormat(sq.Dollar)
 
-	if filter.GetMarketplace() == card.MpOzon.String() {
+	if filter.GetMarketplace() == card.MpOzon.String() || filter.GetMarketplace() == card.MpYandex.String() {
 		qb = qb.OrderBy(`info->>'order_shipment_date'`, orderCreatedAtColumn)
 	} else {
 		qb = qb.OrderBy(orderCreatedAtColumn)
