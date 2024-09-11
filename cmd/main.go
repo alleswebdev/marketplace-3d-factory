@@ -9,6 +9,9 @@ import (
 
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/order_queue"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/workers/cards_updater"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/service/workers/yandex_orders_updater"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/service/yandex"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -46,6 +49,7 @@ func main() {
 
 	wbClient := wb.NewClient(cfg.WbToken)
 	ozonClient := ozon.NewClient(cfg.OzonToken, cfg.OzonClientID)
+	yandexClient := yandex.NewClient(cfg.YandexToken, cfg.YandexCompaignID, cfg.YandexBusinessID)
 
 	dbpool, err := pgxpool.New(ctx, cfg.DatabaseURL)
 	if err != nil {
@@ -67,10 +71,13 @@ func main() {
 	ozonOrdersUpdater := ozon_orders_updater.NewWorker(ozonClient, orderQueueStore, cardStore)
 	go ozonOrdersUpdater.Run(ctx)
 
+	yandexOrdersUpdater := yandex_orders_updater.NewWorker(yandexClient, orderQueueStore, cardStore)
+	go yandexOrdersUpdater.Run(ctx)
+
 	suppliesUpdater := supplies_updater.NewWorker(wbClient, ozonClient, orderQueueStore)
 	go suppliesUpdater.Run(ctx)
 
-	cardsUpdater := cards_updater.NewWorker(wbClient, ozonClient, cardStore)
+	cardsUpdater := cards_updater.NewWorker(wbClient, ozonClient, yandexClient, cardStore)
 	go cardsUpdater.Run(ctx)
 
 	appAPI := api.New(cardStore, wbClient, ozonClient, orderQueueStore)

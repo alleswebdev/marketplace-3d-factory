@@ -14,6 +14,10 @@ type Config struct {
 	OzonToken    string
 	OzonClientID string
 	DatabaseURL  string
+
+	YandexToken      string
+	YandexBusinessID string
+	YandexCompaignID string
 }
 
 func GetAppConfig() Config {
