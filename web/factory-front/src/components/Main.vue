@@ -337,9 +337,9 @@ export default {
       axios.get(`/api/v2/list-queue?withParentComplete=${this.withCompleteParent}&marketplace=yandex`)
         .then(response => {
           this.yandexItems = response.data.items || [];
-          this.groupeYandexItems = []
+          this.groupedYandexItems = []
           if(this.yandexItems.length > 0){
-            this.groupeYandexItems = this.groupByShipmentDate(response.data)
+            this.groupedYandexItems = this.groupByShipmentDate(response.data)
           }
 
         })
