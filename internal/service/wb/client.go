@@ -62,12 +62,10 @@ func (c Client) GetNewOrders(ctx context.Context) (OrdersResponse, error) {
 	return response, nil
 }
 
-func (c Client) GetCardsList(ctx context.Context) (CardsListResponse, error) {
+func (c Client) GetCardsList(ctx context.Context, cursor CardListCursor) (CardsListResponse, error) {
 	requestBody, err := json.Marshal(CardListRequest{
 		CardListSettings: CardListSettings{
-			CardListCursor: CardListCursor{
-				Limit: 99,
-			},
+			CardListCursor: cursor,
 			Filter: Filter{
 				WithPhoto: 1,
 			},
@@ -83,21 +81,9 @@ func (c Client) GetCardsList(ctx context.Context) (CardsListResponse, error) {
 		return CardsListResponse{}, errors.Wrap(err, "http.NewRequestWithContext")
 	}
 
-	req.Header.Set("Authorization", c.token)
-
-	resp, err := c.httpClient.Do(req)
+	body, err := c.doRequest(req)
 	if err != nil {
-		return CardsListResponse{}, errors.Wrap(err, "httpClient.Do")
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return CardsListResponse{}, errors.Errorf("http status:%d", resp.StatusCode)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return CardsListResponse{}, errors.Wrap(err, "io.ReadAll")
+		return CardsListResponse{}, errors.Wrap(err, "doRequest")
 	}
 
 	var response CardsListResponse
@@ -107,6 +93,23 @@ func (c Client) GetCardsList(ctx context.Context) (CardsListResponse, error) {
 	}
 
 	return response, nil
+}
+
+func (c Client) doRequest(req *http.Request) ([]byte, error) {
+	req.Header.Set("Authorization", c.token)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "httpClient.Do")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("http status:%d", resp.StatusCode)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	return body, errors.Wrap(err, "io.ReadAll")
 }
 
 func (c Client) GetSupplies(ctx context.Context, next int) (SuppliesResponse, error) {

@@ -72,9 +72,9 @@ type CardsListResponse struct {
 }
 
 type CardsListResponseCursor struct {
-	UpdatedAt time.Time `json:"updatedAt"`
-	NmID      int       `json:"nmID"`
-	Total     int       `json:"total"`
+	UpdatedAt string `json:"updatedAt"`
+	NmID      int    `json:"nmID"`
+	Total     int    `json:"total"`
 }
 
 type CardListRequest struct {
@@ -87,7 +87,9 @@ type CardListSettings struct {
 }
 
 type CardListCursor struct {
-	Limit int `json:"limit"`
+	UpdatedAt string `json:"updatedAt,omitempty"`
+	NmID      int    `json:"nmID,omitempty"`
+	Limit     int    `json:"limit"`
 }
 
 type Filter struct {

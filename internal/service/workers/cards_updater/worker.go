@@ -67,14 +67,35 @@ func (w Worker) Run(ctx context.Context) {
 }
 
 func (w Worker) updateWb(ctx context.Context) error {
-	cardsResp, err := w.wbClient.GetCardsList(ctx)
-	if err != nil {
-		return errors.Wrap(err, "wbClient.GetCardsList")
-	}
+	const cardsLimit = 99
 
-	err = w.cardStore.AddCards(ctx, card.ConvertCards(cardsResp.Cards))
-	if err != nil {
-		return errors.Wrap(err, "cardStore.AddCards")
+	var (
+		updatedAt = ""
+		nmId      = 0
+	)
+
+	for {
+		cardsResp, err := w.wbClient.GetCardsList(ctx, wb.CardListCursor{
+			UpdatedAt: updatedAt,
+			NmID:      nmId,
+			Limit:     cardsLimit,
+		})
+
+		if err != nil {
+			return errors.Wrap(err, "wbClient.GetCardsList")
+		}
+
+		err = w.cardStore.AddCards(ctx, card.ConvertCards(cardsResp.Cards))
+		if err != nil {
+			return errors.Wrap(err, "cardStore.AddCards")
+		}
+
+		if cardsResp.CardsListResponseCursor.Total < cardsLimit {
+			break
+		}
+
+		updatedAt = cardsResp.CardsListResponseCursor.UpdatedAt
+		nmId = cardsResp.CardsListResponseCursor.NmID
 	}
 
 	return nil
