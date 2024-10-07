@@ -3,6 +3,7 @@ package yandex_orders_updater
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"strconv"
 	"time"
@@ -113,7 +114,7 @@ func convertRespToOrders(resp yandex.OrdersDTO, cards map[string]card.Card) []or
 				Items:          makeItems(c),
 				OrderCreatedAt: sql.NullTime{Time: createdAt, Valid: true},
 				Info: order_queue.Info{
-					OrderNumber:     strconv.Itoa(product.Id),
+					OrderNumber:     fmt.Sprintf("№ %[1]d / %[1]d", order.Id),
 					OrderShipmentAt: shipmentAt,
 					Quantity:        int32(product.Count),
 				},

@@ -3,6 +3,8 @@ package card
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/v2/pgxscan"
@@ -24,6 +26,7 @@ const (
 	sizeColumn        = "size"
 	marketplaceColumn = "marketplace"
 	isCompositeColumn = "is_composite"
+	fixPhotoENV       = "factory_fix_photo_wb"
 )
 
 type Store struct {
@@ -35,11 +38,15 @@ func New(dbPool *pgxpool.Pool) Store {
 }
 
 func (s *Store) AddCards(ctx context.Context, cards []Card) error {
+	suffix := fmt.Sprintf(`ON CONFLICT(%s, %s) DO NOTHING`, articleColumn, marketplaceColumn)
+
+	if ok, _ := strconv.ParseBool(os.Getenv(fixPhotoENV)); ok {
+		suffix = fmt.Sprintf(`ON CONFLICT(%s, %s) DO UPDATE SET %s = excluded.%s`, articleColumn, marketplaceColumn, photoColumn, photoColumn)
+	}
+
 	qb := sq.Insert(tableName).
 		Columns(idColumn, nameColumn, articleColumn, photoColumn, marketplaceColumn).
-		Suffix(
-			fmt.Sprintf(`ON CONFLICT(%s, %s) DO NOTHING`, articleColumn, marketplaceColumn),
-		).
+		Suffix(suffix).
 		PlaceholderFormat(sq.Dollar)
 
 	for _, item := range cards {
