@@ -43,8 +43,8 @@ jobs:
           END
         env:
           SSH_USER: ${{ secrets.VPS_USER }}
-          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          SSH_HOST: ${{ secrets.VPS_IP }}
+          SSH_KEY: ${{ secrets.GERMANY_SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.GERMANY_VPS_IP }}
 
       - name: migrate db
         run: |
