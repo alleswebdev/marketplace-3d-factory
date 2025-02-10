@@ -129,3 +129,15 @@ type SupplyOrdersResponse struct {
 		CargoType             int         `json:"cargoType"`
 	} `json:"orders"`
 }
+
+type OrderStatusRequest struct {
+	Orders []uint64 `json:"orders"`
+}
+
+type OrderStatusResponse struct {
+	Orders []struct {
+		ID             uint64 `json:"id"`
+		SupplierStatus string `json:"supplierStatus"`
+		WbStatus       string `json:"wbStatus"`
+	} `json:"orders"`
+}
