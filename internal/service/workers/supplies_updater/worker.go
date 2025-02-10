@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/alleswebdev/marketplace-3d-factory/internal/db/card"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/order_queue"
 	"github.com/pkg/errors"
 
@@ -15,6 +16,7 @@ import (
 )
 
 const delayInterval = 5 * time.Second
+const StatusDeclinedByClient = "declined_by_client"
 
 type Worker struct {
 	wbClient         wb.Client
@@ -38,10 +40,16 @@ func (w Worker) Run(ctx context.Context) {
 		default:
 			wbCtxTimeout, wbCancel := context.WithTimeout(ctx, time.Second*30)
 			err := w.updateWb(wbCtxTimeout)
-			wbCancel()
 			if err != nil {
 				log.Printf("wb_supplies_updater:%s\n", err)
 			}
+
+			err = w.updateWbCancelled(wbCtxTimeout)
+			if err != nil {
+				log.Printf("wb_supplies_updater:%s\n", err)
+			}
+
+			wbCancel()
 
 			ozonCtxTimeout, ozonCancel := context.WithTimeout(ctx, time.Second*30)
 			ozonErr := w.updateOzon(ozonCtxTimeout)
@@ -99,6 +107,49 @@ func (w Worker) updateWb(ctx context.Context) error {
 
 	err := w.ordersQueueStore.SetCompleteByOrderIDs(ctx, orderIDs)
 	return errors.Wrap(err, "queueStore.SetCompleteByOrderIDs")
+}
+
+func (w Worker) updateWbCancelled(ctx context.Context) error {
+	orders, err := w.ordersQueueStore.GetOrders(ctx, order_queue.ListFilter{
+		WithParentComplete: false,
+		Marketplace:        string(card.MpWb),
+	})
+
+	if err != nil {
+		return errors.Wrap(err, "ordersQueueStore.GetOrders")
+	}
+
+	ids := make([]uint64, 0, len(orders))
+	for _, order := range orders {
+		id, _ := strconv.ParseUint(order.ID, 10, 64)
+		ids = append(ids, id)
+	}
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	resp, err := w.wbClient.GetOrdersStatus(ctx, ids)
+	if err != nil {
+		return errors.Wrap(err, "wbClient.GetOrdersStatus")
+	}
+
+	var cancelledIDs []string
+	for _, order := range resp.Orders {
+		if order.SupplierStatus == StatusDeclinedByClient {
+			cancelledIDs = append(cancelledIDs, strconv.Itoa(int(order.ID)))
+		}
+	}
+
+	if len(cancelledIDs) == 0 {
+		return nil
+	}
+
+	if err := w.ordersQueueStore.SetCompleteByOrderIDs(ctx, cancelledIDs); err != nil {
+		return errors.Wrap(err, "SetCompleteByOrderIDs")
+	}
+
+	return nil
 }
 
 func (w Worker) updateOzon(ctx context.Context) error {

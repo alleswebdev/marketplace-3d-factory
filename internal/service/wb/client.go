@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	APIURL = "https://marketplace-api.wildberries.ru"
+	MarketplaceApiUrl = "https://marketplace-api.wildberries.ru"
+	ContentApiUrl     = "https://content-api.wildberries.ru"
 )
 
 type Client struct {
@@ -32,7 +33,7 @@ func NewClient(token string) Client {
 }
 
 func (c Client) GetNewOrders(ctx context.Context) (OrdersResponse, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", APIURL+"/api/v3/orders/new", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", MarketplaceApiUrl+"/api/v3/orders/new", nil)
 	if err != nil {
 		return OrdersResponse{}, errors.Wrap(err, "http.NewRequestWithContext")
 	}
@@ -76,7 +77,7 @@ func (c Client) GetCardsList(ctx context.Context, cursor CardListCursor) (CardsL
 		return CardsListResponse{}, errors.Wrap(err, "json.Marshal")
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", APIURL+"/content/v2/get/cards/list?locale=ru", bytes.NewReader(requestBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", ContentApiUrl+"/content/v2/get/cards/list?locale=ru", bytes.NewReader(requestBody))
 	if err != nil {
 		return CardsListResponse{}, errors.Wrap(err, "http.NewRequestWithContext")
 	}
@@ -97,6 +98,7 @@ func (c Client) GetCardsList(ctx context.Context, cursor CardListCursor) (CardsL
 
 func (c Client) doRequest(req *http.Request) ([]byte, error) {
 	req.Header.Set("Authorization", c.token)
+	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -113,7 +115,7 @@ func (c Client) doRequest(req *http.Request) ([]byte, error) {
 }
 
 func (c Client) GetSupplies(ctx context.Context, next int) (SuppliesResponse, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", APIURL+"/api/v3/supplies?limit=300&next="+strconv.Itoa(next), nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", MarketplaceApiUrl+"/api/v3/supplies?limit=300&next="+strconv.Itoa(next), nil)
 	if err != nil {
 		return SuppliesResponse{}, errors.Wrap(err, "http.NewRequestWithContext")
 	}
@@ -144,7 +146,7 @@ func (c Client) GetSupplies(ctx context.Context, next int) (SuppliesResponse, er
 }
 
 func (c Client) GetSupplyOrders(ctx context.Context, supply string) (SupplyOrdersResponse, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/api/v3/supplies/%s/orders", APIURL, supply), nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/api/v3/supplies/%s/orders", MarketplaceApiUrl, supply), nil)
 	if err != nil {
 		return SupplyOrdersResponse{}, errors.Wrap(err, "http.NewRequestWithContext")
 	}
@@ -169,6 +171,34 @@ func (c Client) GetSupplyOrders(ctx context.Context, supply string) (SupplyOrder
 	err = json.Unmarshal(body, &response)
 	if err != nil {
 		return SupplyOrdersResponse{}, errors.Wrap(err, "json.Unmarshal")
+	}
+
+	return response, nil
+}
+
+func (c Client) GetOrdersStatus(ctx context.Context, orders []uint64) (OrderStatusResponse, error) {
+	requestBody, err := json.Marshal(OrderStatusRequest{
+		Orders: orders,
+	})
+
+	if err != nil {
+		return OrderStatusResponse{}, errors.Wrap(err, "json.Marshal")
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", MarketplaceApiUrl+"/api/v3/orders/status", bytes.NewReader(requestBody))
+	if err != nil {
+		return OrderStatusResponse{}, errors.Wrap(err, "http.NewRequestWithContext")
+	}
+
+	body, err := c.doRequest(req)
+	if err != nil {
+		return OrderStatusResponse{}, errors.Wrap(err, "doRequest")
+	}
+
+	var response OrderStatusResponse
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return OrderStatusResponse{}, errors.Wrap(err, "json.Unmarshal")
 	}
 
 	return response, nil
