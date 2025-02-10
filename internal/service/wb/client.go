@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	APIURL = "https://suppliers-api.wildberries.ru"
+	APIURL = "https://marketplace-api.wildberries.ru"
 )
 
 type Client struct {
