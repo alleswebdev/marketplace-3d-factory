@@ -33,7 +33,7 @@ type ProductListInfoRequest struct {
 	Sku        []int64  `json:"sku"`
 }
 
-type ProductListInfoResponse struct {
+type ProductListInfoResponseOld struct {
 	Result struct {
 		Items []struct {
 			ID               int           `json:"id"`
@@ -126,6 +126,115 @@ type ProductListInfoResponse struct {
 	} `json:"result"`
 }
 
+type ProductListInfoResponse struct {
+	Items []struct {
+		Barcodes    []string `json:"barcodes"`
+		ColorImage  []string `json:"color_image"`
+		Commissions []struct {
+			DeliveryAmount int    `json:"delivery_amount"`
+			Percent        int    `json:"percent"`
+			ReturnAmount   int    `json:"return_amount"`
+			SaleSchema     string `json:"sale_schema"`
+			Value          int    `json:"value"`
+		} `json:"commissions"`
+		CreatedAt             time.Time `json:"created_at"`
+		CurrencyCode          string    `json:"currency_code"`
+		DescriptionCategoryId int       `json:"description_category_id"`
+		DiscountedFboStocks   int       `json:"discounted_fbo_stocks"`
+		Errors                []struct {
+			AttributeId int    `json:"attribute_id"`
+			Code        string `json:"code"`
+			Field       string `json:"field"`
+			Level       string `json:"level"`
+			State       string `json:"state"`
+			Texts       struct {
+				AttributeName string `json:"attribute_name"`
+				Description   string `json:"description"`
+				HintCode      string `json:"hint_code"`
+				Message       string `json:"message"`
+				Params        []struct {
+					Name  string `json:"name"`
+					Value string `json:"value"`
+				} `json:"params"`
+				ShortDescription string `json:"short_description"`
+			} `json:"texts"`
+		} `json:"errors"`
+		HasDiscountedFboItem bool     `json:"has_discounted_fbo_item"`
+		Id                   int      `json:"id"`
+		Images               []string `json:"images"`
+		Images360            []string `json:"images360"`
+		IsArchived           bool     `json:"is_archived"`
+		IsAutoarchived       bool     `json:"is_autoarchived"`
+		IsDiscounted         bool     `json:"is_discounted"`
+		IsKgt                bool     `json:"is_kgt"`
+		IsPrepaymentAllowed  bool     `json:"is_prepayment_allowed"`
+		IsSuper              bool     `json:"is_super"`
+		MarketingPrice       string   `json:"marketing_price"`
+		MinPrice             string   `json:"min_price"`
+		ModelInfo            struct {
+			Count   int `json:"count"`
+			ModelId int `json:"model_id"`
+		} `json:"model_info"`
+		Name         string `json:"name"`
+		OfferId      string `json:"offer_id"`
+		OldPrice     string `json:"old_price"`
+		Price        string `json:"price"`
+		PriceIndexes struct {
+			ColorIndex        string `json:"color_index"`
+			ExternalIndexData struct {
+				MinimalPrice         string `json:"minimal_price"`
+				MinimalPriceCurrency string `json:"minimal_price_currency"`
+				PriceIndexValue      int    `json:"price_index_value"`
+			} `json:"external_index_data"`
+			OzonIndexData struct {
+				MinimalPrice         string `json:"minimal_price"`
+				MinimalPriceCurrency string `json:"minimal_price_currency"`
+				PriceIndexValue      int    `json:"price_index_value"`
+			} `json:"ozon_index_data"`
+			SelfMarketplacesIndexData struct {
+				MinimalPrice         string `json:"minimal_price"`
+				MinimalPriceCurrency string `json:"minimal_price_currency"`
+				PriceIndexValue      int    `json:"price_index_value"`
+			} `json:"self_marketplaces_index_data"`
+		} `json:"price_indexes"`
+		PrimaryImage []string `json:"primary_image"`
+		Sources      []struct {
+			CreatedAt    time.Time `json:"created_at"`
+			QuantCode    string    `json:"quant_code"`
+			ShipmentType string    `json:"shipment_type"`
+			Sku          int       `json:"sku"`
+			Source       string    `json:"source"`
+		} `json:"sources"`
+		Statuses struct {
+			IsCreated         bool      `json:"is_created"`
+			ModerateStatus    string    `json:"moderate_status"`
+			Status            string    `json:"status"`
+			StatusDescription string    `json:"status_description"`
+			StatusFailed      string    `json:"status_failed"`
+			StatusName        string    `json:"status_name"`
+			StatusTooltip     string    `json:"status_tooltip"`
+			StatusUpdatedAt   time.Time `json:"status_updated_at"`
+			ValidationStatus  string    `json:"validation_status"`
+		} `json:"statuses"`
+		Stocks struct {
+			HasStock bool `json:"has_stock"`
+			Stocks   []struct {
+				Present  int    `json:"present"`
+				Reserved int    `json:"reserved"`
+				Sku      int    `json:"sku"`
+				Source   string `json:"source"`
+			} `json:"stocks"`
+		} `json:"stocks"`
+		TypeId            int       `json:"type_id"`
+		UpdatedAt         time.Time `json:"updated_at"`
+		Vat               string    `json:"vat"`
+		VisibilityDetails struct {
+			HasPrice bool `json:"has_price"`
+			HasStock bool `json:"has_stock"`
+		} `json:"visibility_details"`
+		VolumeWeight int `json:"volume_weight"`
+	} `json:"items"`
+}
 type UnfulfilledListRequest struct {
 	Dir    string `json:"dir"`
 	Limit  int    `json:"limit"`
