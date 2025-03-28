@@ -33,7 +33,7 @@ func NewClient(token, clientID string) Client {
 
 func (c Client) GetProductList(ctx context.Context) (ProductListResponse, error) {
 	//todo limit и пагинация хардкодится, тк карточек мало
-	req, err := http.NewRequestWithContext(ctx, "POST", APIURL+"/v2/product/list", bytes.NewReader([]byte(`{"last_id": "","limit": 300}`)))
+	req, err := http.NewRequestWithContext(ctx, "POST", APIURL+"/v3/product/list", bytes.NewReader([]byte(`{"filter":{}, "last_id": "","limit": 300}`)))
 	if err != nil {
 		return ProductListResponse{}, errors.Wrap(err, "http.NewRequestWithContext")
 	}
@@ -71,7 +71,7 @@ func (c Client) GetProductInfoList(ctx context.Context, productIDs []int64) (Pro
 		return ProductListInfoResponse{}, errors.Wrap(err, "json.Marshal")
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", APIURL+"/v2/product/info/list", bytes.NewReader(requestBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", APIURL+"/v3/product/info/list", bytes.NewReader(requestBody))
 	if err != nil {
 		return ProductListInfoResponse{}, errors.Wrap(err, "http.NewRequestWithContext")
 	}
