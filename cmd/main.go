@@ -7,23 +7,22 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/alleswebdev/marketplace-3d-factory/internal/db/order_queue"
-	"github.com/alleswebdev/marketplace-3d-factory/internal/service/workers/cards_updater"
-	"github.com/alleswebdev/marketplace-3d-factory/internal/service/workers/yandex_orders_updater"
-	"github.com/alleswebdev/marketplace-3d-factory/internal/service/yandex"
-
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/jackc/pgx/v5/pgxpool"
-
-	"github.com/alleswebdev/marketplace-3d-factory/internal/api"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/app/api"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/config"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/card"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/db/orderqueue"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/ozon"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/service/queue"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/wb"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/service/workers/cards_updater"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/workers/ozon_orders_updater"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/workers/supplies_updater"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/workers/wb_orders_updater"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/service/workers/yandex_orders_updater"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/service/yandex"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
@@ -59,11 +58,7 @@ func main() {
 	defer dbpool.Close()
 
 	cardStore := card.New(dbpool)
-	orderQueueStore := order_queue.New(dbpool)
-
-	if err != nil {
-		log.Fatal(err)
-	}
+	orderQueueStore := orderqueue.New(dbpool)
 
 	ordersUpdater := wb_orders_updater.NewWorker(wbClient, orderQueueStore, cardStore)
 	go ordersUpdater.Run(ctx)
@@ -80,11 +75,12 @@ func main() {
 	cardsUpdater := cards_updater.NewWorker(wbClient, ozonClient, yandexClient, cardStore)
 	go cardsUpdater.Run(ctx)
 
-	appAPI := api.New(cardStore, wbClient, ozonClient, orderQueueStore)
-	app.Get("/api/v2/list-queue", appAPI.ListQueueV2)
-	app.Post("/api/v2/set-complete", appAPI.SetCompleteV2)
-	app.Post("/api/v2/set-children-complete", appAPI.SetChildrenCompleteV2)
-	app.Post("/api/v2/set-printing", appAPI.SetPrintingV2)
+	queueService := queue.New(cardStore, orderQueueStore)
+	appAPI := api.New(queueService)
+	app.Get("/api/v2/list-queue", appAPI.ListQueue)
+	app.Post("/api/v2/set-complete", appAPI.SetComplete)
+	app.Post("/api/v2/set-children-complete", appAPI.SetChildrenComplete)
+	app.Post("/api/v2/set-printing", appAPI.SetPrinting)
 
 	err = app.Listen(":" + strconv.Itoa(cfg.Port))
 	if err != nil {
