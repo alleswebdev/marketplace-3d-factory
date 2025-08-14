@@ -1,4 +1,4 @@
-package order_queue
+package orderqueue
 
 import (
 	"context"
@@ -33,8 +33,8 @@ type Store struct {
 	dbPool *pgxpool.Pool
 }
 
-func New(dbPool *pgxpool.Pool) Store {
-	return Store{dbPool: dbPool}
+func New(dbPool *pgxpool.Pool) *Store {
+	return &Store{dbPool: dbPool}
 }
 
 func (s *Store) AddOrders(ctx context.Context, orders []Order) error {

@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/alleswebdev/marketplace-3d-factory/internal/db/order_queue"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/db/orderqueue"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
@@ -17,17 +17,31 @@ import (
 
 const delayInterval = 10 * time.Second
 
-type OrdersClient interface {
-	GetNewOrders(ctx context.Context) (wb.OrdersResponse, error)
-}
+type (
+	OrdersClient interface {
+		GetNewOrders(ctx context.Context) (wb.OrdersResponse, error)
+	}
+	OrdersStore interface {
+		AddOrders(ctx context.Context, orders []orderqueue.Order) error
+		GetOrders(ctx context.Context, filter orderqueue.ListFilter) ([]orderqueue.Order, error)
+		SetCompleteByOrderIDs(ctx context.Context, orderIDs []string) error
+		SetComplete(ctx context.Context, id string, isComplete bool) error
+		SetPrinting(ctx context.Context, id string, isPrinting bool) error
+		SetChildrenComplete(ctx context.Context, id string, isComplete bool) error
+	}
+	CardsStore interface {
+		AddCards(ctx context.Context, cards []card.Card) error
+		GetByArticlesMap(ctx context.Context, articles []string) (map[string]card.Card, error)
+	}
+)
 
 type Worker struct {
 	ordersClient OrdersClient
-	ordersStore  order_queue.Store
-	cardsStore   card.Store
+	ordersStore  OrdersStore
+	cardsStore   CardsStore
 }
 
-func NewWorker(ordersClient OrdersClient, ordersStore order_queue.Store, cardsStore card.Store) Worker {
+func NewWorker(ordersClient OrdersClient, ordersStore OrdersStore, cardsStore CardsStore) Worker {
 	return Worker{
 		ordersClient: ordersClient,
 		ordersStore:  ordersStore,
@@ -80,15 +94,15 @@ func (w Worker) update(ctx context.Context) error {
 	return nil
 }
 
-func convertOrders(wbOrders []wb.Order, cards map[string]card.Card) []order_queue.Order {
-	result := make([]order_queue.Order, 0, len(wbOrders))
+func convertOrders(wbOrders []wb.Order, cards map[string]card.Card) []orderqueue.Order {
+	result := make([]orderqueue.Order, 0, len(wbOrders))
 	for _, item := range wbOrders {
 		c, ok := cards[item.Article]
 		if !ok {
 			continue
 		}
 
-		result = append(result, order_queue.Order{
+		result = append(result, orderqueue.Order{
 			ID:             strconv.Itoa(int(item.ID)),
 			Article:        item.Article,
 			Items:          makeItems(c),
@@ -100,14 +114,14 @@ func convertOrders(wbOrders []wb.Order, cards map[string]card.Card) []order_queu
 	return result
 }
 
-func makeItems(c card.Card) []order_queue.Item {
+func makeItems(c card.Card) []orderqueue.Item {
 	if !c.IsComposite {
-		return []order_queue.Item{}
+		return []orderqueue.Item{}
 	}
 
-	result := make([]order_queue.Item, 0, len(c.Articles))
+	result := make([]orderqueue.Item, 0, len(c.Articles))
 	for _, art := range c.Articles {
-		result = append(result, order_queue.Item{
+		result = append(result, orderqueue.Item{
 			ID:         uuid.NewString(),
 			Name:       art,
 			IsComplete: false,

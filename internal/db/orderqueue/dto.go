@@ -1,4 +1,4 @@
-package order_queue
+package orderqueue
 
 import (
 	"database/sql"

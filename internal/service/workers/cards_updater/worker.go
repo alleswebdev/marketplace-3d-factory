@@ -18,14 +18,21 @@ import (
 
 const delayInterval = 5 * time.Second
 
+type (
+	CardsStore interface {
+		AddCards(ctx context.Context, cards []card.Card) error
+		GetByArticlesMap(ctx context.Context, articles []string) (map[string]card.Card, error)
+	}
+)
+
 type Worker struct {
 	wbClient     wb.Client
 	ozonClient   ozon.Client
 	yandexClient yandex.Client
-	cardStore    card.Store
+	cardStore    CardsStore
 }
 
-func NewWorker(wbClient wb.Client, ozonClient ozon.Client, yandexClient yandex.Client, cardStore card.Store) Worker {
+func NewWorker(wbClient wb.Client, ozonClient ozon.Client, yandexClient yandex.Client, cardStore CardsStore) Worker {
 	return Worker{
 		wbClient:     wbClient,
 		ozonClient:   ozonClient,

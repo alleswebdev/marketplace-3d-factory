@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
-	"github.com/alleswebdev/marketplace-3d-factory/internal/db/order_queue"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/db/orderqueue"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/yandex"
 
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/card"
@@ -19,17 +19,31 @@ import (
 
 const delayInterval = 10 * time.Second
 
-type OrdersClient interface {
-	GetOrders(ctx context.Context, status string) (yandex.OrdersDTO, error)
-}
+type (
+	OrdersClient interface {
+		GetOrders(ctx context.Context, status string) (yandex.OrdersDTO, error)
+	}
+	OrdersStore interface {
+		AddOrders(ctx context.Context, orders []orderqueue.Order) error
+		GetOrders(ctx context.Context, filter orderqueue.ListFilter) ([]orderqueue.Order, error)
+		SetCompleteByOrderIDs(ctx context.Context, orderIDs []string) error
+		SetComplete(ctx context.Context, id string, isComplete bool) error
+		SetPrinting(ctx context.Context, id string, isPrinting bool) error
+		SetChildrenComplete(ctx context.Context, id string, isComplete bool) error
+	}
+	CardsStore interface {
+		AddCards(ctx context.Context, cards []card.Card) error
+		GetByArticlesMap(ctx context.Context, articles []string) (map[string]card.Card, error)
+	}
+)
 
 type Worker struct {
 	ordersClient OrdersClient
-	ordersStore  order_queue.Store
-	cardsStore   card.Store
+	ordersStore  OrdersStore
+	cardsStore   CardsStore
 }
 
-func NewWorker(ordersClient OrdersClient, ordersStore order_queue.Store, cardsStore card.Store) Worker {
+func NewWorker(ordersClient OrdersClient, ordersStore OrdersStore, cardsStore CardsStore) Worker {
 	return Worker{
 		ordersClient: ordersClient,
 		ordersStore:  ordersStore,
@@ -82,8 +96,8 @@ func (w Worker) update(ctx context.Context) error {
 	return nil
 }
 
-func convertRespToOrders(resp yandex.OrdersDTO, cards map[string]card.Card) []order_queue.Order {
-	result := make([]order_queue.Order, 0, len(resp.Orders))
+func convertRespToOrders(resp yandex.OrdersDTO, cards map[string]card.Card) []orderqueue.Order {
+	result := make([]orderqueue.Order, 0, len(resp.Orders))
 	for _, order := range resp.Orders {
 		if order.Substatus == "SHIPPED" {
 			continue
@@ -107,13 +121,13 @@ func convertRespToOrders(resp yandex.OrdersDTO, cards map[string]card.Card) []or
 				}
 			}
 
-			result = append(result, order_queue.Order{
+			result = append(result, orderqueue.Order{
 				ID:             strconv.Itoa(product.Id),
 				Article:        product.OfferId,
 				Marketplace:    card.MpYandex.String(),
 				Items:          makeItems(c),
 				OrderCreatedAt: sql.NullTime{Time: createdAt, Valid: true},
-				Info: order_queue.Info{
+				Info: orderqueue.Info{
 					OrderNumber:     fmt.Sprintf("№ %[1]d / %[1]d", order.Id),
 					OrderShipmentAt: shipmentAt,
 					Quantity:        int32(product.Count),
@@ -125,14 +139,14 @@ func convertRespToOrders(resp yandex.OrdersDTO, cards map[string]card.Card) []or
 	return result
 }
 
-func makeItems(c card.Card) []order_queue.Item {
+func makeItems(c card.Card) []orderqueue.Item {
 	if !c.IsComposite {
-		return []order_queue.Item{}
+		return []orderqueue.Item{}
 	}
 
-	result := make([]order_queue.Item, 0, len(c.Articles))
+	result := make([]orderqueue.Item, 0, len(c.Articles))
 	for _, art := range c.Articles {
-		result = append(result, order_queue.Item{
+		result = append(result, orderqueue.Item{
 			ID:         uuid.NewString(),
 			Name:       art,
 			IsComplete: false,

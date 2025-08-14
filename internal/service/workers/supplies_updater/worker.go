@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/card"
-	"github.com/alleswebdev/marketplace-3d-factory/internal/db/order_queue"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/db/orderqueue"
 	"github.com/pkg/errors"
 
 	"github.com/alleswebdev/marketplace-3d-factory/internal/service/ozon"
@@ -18,13 +18,22 @@ import (
 const delayInterval = 5 * time.Second
 const StatusDeclinedByClient = "declined_by_client"
 
+type OrdersStore interface {
+	AddOrders(ctx context.Context, orders []orderqueue.Order) error
+	GetOrders(ctx context.Context, filter orderqueue.ListFilter) ([]orderqueue.Order, error)
+	SetCompleteByOrderIDs(ctx context.Context, orderIDs []string) error
+	SetComplete(ctx context.Context, id string, isComplete bool) error
+	SetPrinting(ctx context.Context, id string, isPrinting bool) error
+	SetChildrenComplete(ctx context.Context, id string, isComplete bool) error
+}
+
 type Worker struct {
 	wbClient         wb.Client
 	ozonClient       ozon.Client
-	ordersQueueStore order_queue.Store
+	ordersQueueStore OrdersStore
 }
 
-func NewWorker(wbClient wb.Client, ozonClient ozon.Client, ordersQueueStore order_queue.Store) Worker {
+func NewWorker(wbClient wb.Client, ozonClient ozon.Client, ordersQueueStore OrdersStore) Worker {
 	return Worker{
 		wbClient:         wbClient,
 		ozonClient:       ozonClient,
@@ -110,7 +119,7 @@ func (w Worker) updateWb(ctx context.Context) error {
 }
 
 func (w Worker) updateWbCancelled(ctx context.Context) error {
-	orders, err := w.ordersQueueStore.GetOrders(ctx, order_queue.ListFilter{
+	orders, err := w.ordersQueueStore.GetOrders(ctx, orderqueue.ListFilter{
 		WithParentComplete: false,
 		Marketplace:        string(card.MpWb),
 	})
