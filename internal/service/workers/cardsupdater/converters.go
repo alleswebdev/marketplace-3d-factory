@@ -1,10 +1,10 @@
-package cards_updater
+package cardsupdater
 
 import (
 	"github.com/google/uuid"
 
+	"github.com/alleswebdev/marketplace-3d-factory/internal/client/ozon"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/card"
-	"github.com/alleswebdev/marketplace-3d-factory/internal/service/ozon"
 )
 
 func convertProductResponseToCards(productsResponse ozon.ProductListInfoResponse) []card.Card {

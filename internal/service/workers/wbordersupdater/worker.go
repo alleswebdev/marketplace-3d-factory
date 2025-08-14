@@ -1,4 +1,4 @@
-package wb_orders_updater
+package wbordersupdater
 
 import (
 	"context"
@@ -11,8 +11,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
+	"github.com/alleswebdev/marketplace-3d-factory/internal/client/wb"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/card"
-	"github.com/alleswebdev/marketplace-3d-factory/internal/service/wb"
 )
 
 const delayInterval = 10 * time.Second
@@ -23,14 +23,8 @@ type (
 	}
 	OrdersStore interface {
 		AddOrders(ctx context.Context, orders []orderqueue.Order) error
-		GetOrders(ctx context.Context, filter orderqueue.ListFilter) ([]orderqueue.Order, error)
-		SetCompleteByOrderIDs(ctx context.Context, orderIDs []string) error
-		SetComplete(ctx context.Context, id string, isComplete bool) error
-		SetPrinting(ctx context.Context, id string, isPrinting bool) error
-		SetChildrenComplete(ctx context.Context, id string, isComplete bool) error
 	}
 	CardsStore interface {
-		AddCards(ctx context.Context, cards []card.Card) error
 		GetByArticlesMap(ctx context.Context, articles []string) (map[string]card.Card, error)
 	}
 )
@@ -55,10 +49,10 @@ func (w Worker) Run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		default:
-			err := w.update(ctx)
-			if err != nil {
-				log.Printf("orders_updater:%s\n", err)
+			if err := w.update(ctx); err != nil {
+				log.Printf("wb_orders_updater:%s\n", err)
 			}
+
 			time.Sleep(delayInterval)
 		}
 	}
@@ -84,12 +78,9 @@ func (w Worker) update(ctx context.Context) error {
 		return errors.Wrap(err, "cardsStore.GetByArticlesMap")
 	}
 
-	err = w.ordersStore.AddOrders(ctx, convertOrders(resp.Orders, cards))
-	if err != nil {
+	if err = w.ordersStore.AddOrders(ctx, convertOrders(resp.Orders, cards)); err != nil {
 		return errors.Wrap(err, "ordersStore.AddOrders")
 	}
-
-	//log.Println("wb orders updated")
 
 	return nil
 }

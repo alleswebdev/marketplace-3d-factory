@@ -204,3 +204,8 @@ type OrdersDTO struct {
 	Paging struct {
 	} `json:"paging"`
 }
+
+type GetProductListRequest struct {
+	Limit    int  `json:"limit"`
+	Archived bool `json:"archived"`
+}
