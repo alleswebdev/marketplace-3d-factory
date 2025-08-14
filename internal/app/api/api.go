@@ -90,7 +90,7 @@ func (a FactoryAPI) SetChildrenComplete(c *fiber.Ctx) error {
 
 func (a FactoryAPI) ListQueue(c *fiber.Ctx) error {
 	filter := new(ListRequest)
-	if err := c.QueryParser(&filter); err != nil {
+	if err := c.QueryParser(filter); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, errors.Wrap(err, "QueryParser").Error())
 	}
 

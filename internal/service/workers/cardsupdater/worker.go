@@ -1,19 +1,16 @@
-package cards_updater
+package cardsupdater
 
 import (
 	"context"
 	"log"
 	"time"
 
-	"github.com/google/uuid"
-
+	"github.com/alleswebdev/marketplace-3d-factory/internal/client/ozon"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/client/wb"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/client/yandex"
 	"github.com/alleswebdev/marketplace-3d-factory/internal/db/card"
-	"github.com/alleswebdev/marketplace-3d-factory/internal/service/yandex"
-
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
-
-	"github.com/alleswebdev/marketplace-3d-factory/internal/service/ozon"
-	"github.com/alleswebdev/marketplace-3d-factory/internal/service/wb"
 )
 
 const delayInterval = 5 * time.Second
@@ -21,7 +18,6 @@ const delayInterval = 5 * time.Second
 type (
 	CardsStore interface {
 		AddCards(ctx context.Context, cards []card.Card) error
-		GetByArticlesMap(ctx context.Context, articles []string) (map[string]card.Card, error)
 	}
 )
 
@@ -48,25 +44,23 @@ func (w Worker) Run(ctx context.Context) {
 			return
 		default:
 			wbCtxTimeout, wbCancel := context.WithTimeout(ctx, time.Second*30)
-			err := w.updateWb(wbCtxTimeout)
-			wbCancel()
-			if err != nil {
+			if err := w.updateWb(wbCtxTimeout); err != nil {
 				log.Printf("wb_cards_updater:%s\n", err)
 			}
 
+			wbCancel()
+
 			ozonCtxTimeout, ozonCancel := context.WithTimeout(ctx, time.Second*30)
-			ozonErr := w.updateOzon(ozonCtxTimeout)
-			ozonCancel()
-			if err != nil {
-				log.Printf("ozon_cards_updater:%s\n", ozonErr)
+			if err := w.updateOzon(ozonCtxTimeout); err != nil {
+				log.Printf("ozon_cards_updater:%s\n", err)
 			}
+			ozonCancel()
 
 			yandexCtxTimeout, yandexCancel := context.WithTimeout(ctx, time.Second*30)
-			yandexErr := w.updateYandex(yandexCtxTimeout)
-			yandexCancel()
-			if err != nil {
-				log.Printf("yandex_cards_updater:%s\n", yandexErr)
+			if err := w.updateYandex(yandexCtxTimeout); err != nil {
+				log.Printf("yandex_cards_updater:%s\n", err)
 			}
+			yandexCancel()
 
 			time.Sleep(delayInterval)
 		}
@@ -74,11 +68,10 @@ func (w Worker) Run(ctx context.Context) {
 }
 
 func (w Worker) updateWb(ctx context.Context) error {
-	const cardsLimit = 99
-
 	var (
-		updatedAt = ""
-		nmId      = 0
+		updatedAt  = ""
+		nmId       = 0
+		cardsLimit = 99
 	)
 
 	for {
@@ -92,8 +85,7 @@ func (w Worker) updateWb(ctx context.Context) error {
 			return errors.Wrap(err, "wbClient.GetCardsList")
 		}
 
-		err = w.cardStore.AddCards(ctx, card.ConvertCards(cardsResp.Cards))
-		if err != nil {
+		if err = w.cardStore.AddCards(ctx, card.ConvertCards(cardsResp.Cards)); err != nil {
 			return errors.Wrap(err, "cardStore.AddCards")
 		}
 
@@ -109,23 +101,42 @@ func (w Worker) updateWb(ctx context.Context) error {
 }
 
 func (w Worker) updateOzon(ctx context.Context) error {
-	cardsResp, err := w.ozonClient.GetProductList(ctx)
-	if err != nil {
-		return errors.Wrap(err, "ozonClient.GetProductList")
+	var (
+		lastID string
+		limit  = 300
+	)
+
+	for {
+		cardsResp, err := w.ozonClient.GetProductList(ctx, lastID, limit)
+		if err != nil {
+			return errors.Wrap(err, "ozonClient.GetProductList")
+		}
+
+		productIDs := make([]int64, 0, len(cardsResp.Result.Items))
+		for _, item := range cardsResp.Result.Items {
+			productIDs = append(productIDs, item.ProductID)
+		}
+
+		if len(productIDs) == 0 {
+			break
+		}
+
+		products, err := w.ozonClient.GetProductInfoList(ctx, productIDs)
+		if err != nil {
+			return errors.Wrap(err, "ozonClient.GetProductInfoList")
+		}
+
+		if err = w.cardStore.AddCards(ctx, convertProductResponseToCards(products)); err != nil {
+			return errors.Wrap(err, "cardStore.AddCards")
+		}
+
+		lastID = cardsResp.Result.LastID
+		if len(cardsResp.Result.Items) < limit || cardsResp.Result.LastID == "" {
+			break
+		}
 	}
 
-	productIDs := make([]int64, 0, len(cardsResp.Result.Items))
-	for _, item := range cardsResp.Result.Items {
-		productIDs = append(productIDs, item.ProductID)
-	}
-
-	products, err := w.ozonClient.GetProductInfoList(ctx, productIDs)
-	if err != nil {
-		return errors.Wrap(err, "ozonClient.GetProductInfoList")
-	}
-
-	err = w.cardStore.AddCards(ctx, convertProductResponseToCards(products))
-	return errors.Wrap(err, "cardStore.AddCards")
+	return nil
 }
 
 func (w Worker) updateYandex(ctx context.Context) error {
@@ -149,6 +160,9 @@ func (w Worker) updateYandex(ctx context.Context) error {
 		})
 	}
 
-	err = w.cardStore.AddCards(ctx, cards)
-	return errors.Wrap(err, "cardStore.AddCards")
+	if err = w.cardStore.AddCards(ctx, cards); err != nil {
+		return errors.Wrap(err, "cardStore.AddCards")
+	}
+
+	return nil
 }

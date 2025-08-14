@@ -49,7 +49,7 @@ jobs:
 
       - name: migrate db
         run: |
-          scp  -r migrations prod:/home/deployer/www/factory-deploy/migrations
+          scp  -r migrations prod:/home/deployer/www/factory-deploy
           ssh prod  "cd /home/deployer/www/factory-deploy/ && make goose-up"
 
       - name: Deploy to VPS

@@ -14,19 +14,20 @@ const (
 
 type ProductListResponse struct {
 	Result struct {
-		Items []struct {
-			ProductID    int64  `json:"product_id"`
-			OfferID      string `json:"offer_id"`
-			IsFboVisible bool   `json:"is_fbo_visible"`
-			IsFbsVisible bool   `json:"is_fbs_visible"`
-			Archived     bool   `json:"archived"`
-			IsDiscounted bool   `json:"is_discounted"`
-		} `json:"items"`
-		Total  int    `json:"total"`
-		LastID string `json:"last_id"`
+		Items  []ProductListItem `json:"items"`
+		Total  int               `json:"total"`
+		LastID string            `json:"last_id"`
 	} `json:"result"`
 }
 
+type ProductListItem struct {
+	ProductID    int64  `json:"product_id"`
+	OfferID      string `json:"offer_id"`
+	IsFboVisible bool   `json:"is_fbo_visible"`
+	IsFbsVisible bool   `json:"is_fbs_visible"`
+	Archived     bool   `json:"archived"`
+	IsDiscounted bool   `json:"is_discounted"`
+}
 type ProductListInfoRequest struct {
 	OfferID    []string `json:"offer_id"`
 	ProductIDs []int64  `json:"product_id"`
@@ -128,20 +129,11 @@ type ProductListInfoResponseOld struct {
 
 type ProductListInfoResponse struct {
 	Items []struct {
-		Barcodes    []string `json:"barcodes"`
-		ColorImage  []string `json:"color_image"`
-		Commissions []struct {
-			DeliveryAmount int    `json:"delivery_amount"`
-			Percent        int    `json:"percent"`
-			ReturnAmount   int    `json:"return_amount"`
-			SaleSchema     string `json:"sale_schema"`
-			Value          int    `json:"value"`
-		} `json:"commissions"`
-		CreatedAt             time.Time `json:"created_at"`
-		CurrencyCode          string    `json:"currency_code"`
-		DescriptionCategoryId int       `json:"description_category_id"`
-		DiscountedFboStocks   int       `json:"discounted_fbo_stocks"`
-		Errors                []struct {
+		Barcodes     []string  `json:"barcodes"`
+		ColorImage   []string  `json:"color_image"`
+		CreatedAt    time.Time `json:"created_at"`
+		CurrencyCode string    `json:"currency_code"`
+		Errors       []struct {
 			AttributeId int    `json:"attribute_id"`
 			Code        string `json:"code"`
 			Field       string `json:"field"`
@@ -175,28 +167,10 @@ type ProductListInfoResponse struct {
 			Count   int `json:"count"`
 			ModelId int `json:"model_id"`
 		} `json:"model_info"`
-		Name         string `json:"name"`
-		OfferId      string `json:"offer_id"`
-		OldPrice     string `json:"old_price"`
-		Price        string `json:"price"`
-		PriceIndexes struct {
-			ColorIndex        string `json:"color_index"`
-			ExternalIndexData struct {
-				MinimalPrice         string `json:"minimal_price"`
-				MinimalPriceCurrency string `json:"minimal_price_currency"`
-				PriceIndexValue      int    `json:"price_index_value"`
-			} `json:"external_index_data"`
-			OzonIndexData struct {
-				MinimalPrice         string `json:"minimal_price"`
-				MinimalPriceCurrency string `json:"minimal_price_currency"`
-				PriceIndexValue      int    `json:"price_index_value"`
-			} `json:"ozon_index_data"`
-			SelfMarketplacesIndexData struct {
-				MinimalPrice         string `json:"minimal_price"`
-				MinimalPriceCurrency string `json:"minimal_price_currency"`
-				PriceIndexValue      int    `json:"price_index_value"`
-			} `json:"self_marketplaces_index_data"`
-		} `json:"price_indexes"`
+		Name         string   `json:"name"`
+		OfferId      string   `json:"offer_id"`
+		OldPrice     string   `json:"old_price"`
+		Price        string   `json:"price"`
 		PrimaryImage []string `json:"primary_image"`
 		Sources      []struct {
 			CreatedAt    time.Time `json:"created_at"`
@@ -232,7 +206,7 @@ type ProductListInfoResponse struct {
 			HasPrice bool `json:"has_price"`
 			HasStock bool `json:"has_stock"`
 		} `json:"visibility_details"`
-		VolumeWeight int `json:"volume_weight"`
+		VolumeWeight float64 `json:"volume_weight"`
 	} `json:"items"`
 }
 type UnfulfilledListRequest struct {
@@ -379,4 +353,11 @@ type UnfulfilledListResponse struct {
 		} `json:"postings"`
 		Count int `json:"count"`
 	} `json:"result"`
+}
+
+type ProductListRequest struct {
+	Filter struct {
+	} `json:"filter"`
+	LastId string `json:"last_id"`
+	Limit  int    `json:"limit"`
 }

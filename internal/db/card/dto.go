@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/alleswebdev/marketplace-3d-factory/internal/service/wb"
+	"github.com/alleswebdev/marketplace-3d-factory/internal/client/wb"
 )
 
 type Card struct {
