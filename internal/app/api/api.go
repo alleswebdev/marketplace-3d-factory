@@ -89,12 +89,12 @@ func (a FactoryAPI) SetChildrenComplete(c *fiber.Ctx) error {
 }
 
 func (a FactoryAPI) ListQueue(c *fiber.Ctx) error {
-	filter := new(ListRequest)
-	if err := c.QueryParser(filter); err != nil {
+	req := new(ListRequest)
+	if err := c.QueryParser(req); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, errors.Wrap(err, "QueryParser").Error())
 	}
 
-	items, err := a.queueService.ListQueue(c.Context(), filter.WithParentComplete, filter.WithChildrenComplete, filter.Marketplace)
+	items, err := a.queueService.ListQueue(c.Context(), req.WithParentComplete, req.WithChildrenComplete, req.Marketplace)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, errors.Wrap(err, "ListQueue").Error())
 	}
