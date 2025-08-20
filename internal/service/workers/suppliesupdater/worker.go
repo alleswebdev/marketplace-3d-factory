@@ -133,7 +133,6 @@ func (w Worker) updateWbCancelled(ctx context.Context) error {
 	if len(ids) == 0 {
 		return nil
 	}
-
 	resp, err := w.wbClient.GetOrdersStatus(ctx, ids)
 	if err != nil {
 		return errors.Wrap(err, "wbClient.GetOrdersStatus")
@@ -141,7 +140,7 @@ func (w Worker) updateWbCancelled(ctx context.Context) error {
 
 	var cancelledIDs []string
 	for _, order := range resp.Orders {
-		if order.SupplierStatus == StatusDeclinedByClient {
+		if order.SupplierStatus == StatusDeclinedByClient || order.WbStatus == StatusDeclinedByClient {
 			cancelledIDs = append(cancelledIDs, strconv.Itoa(int(order.ID)))
 		}
 	}
